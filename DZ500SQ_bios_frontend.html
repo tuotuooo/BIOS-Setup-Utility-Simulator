@@ -1363,7 +1363,7 @@ function renderPage(pageName) {
     header.textContent = '';
   }
 
-  helpText.textContent = data.help || '暂无帮助信息。';
+  helpText.textContent = data.help !== undefined ? data.help : '暂无帮助信息。';
 
   body.innerHTML = '';
   focusedRowIdx = 0;
