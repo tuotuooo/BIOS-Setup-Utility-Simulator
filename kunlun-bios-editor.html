@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>昆仑 BIOS 编辑器</title>
+<style>
+:root{--bg:#0a1628;--bg2:#1a2940;--bg3:#2a3f5c;--bd:#3f80c1;--tx:#e0e8f0;--tx2:#8b9eb5;--ac:#3f80c1;--ac2:#5090d8;--gn:#52bad1;--rd:#e04040;--cy:#00a8e8}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Microsoft YaHei','PingFang SC',sans-serif;background:var(--bg);color:var(--tx);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+#appMain{display:flex!important;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+
+/* ===== 顶部工具栏 ===== */
+.tb{display:flex;align-items:center;gap:8px;padding:8px 16px;background:linear-gradient(135deg,var(--bg2),var(--bg3));border-bottom:2px solid var(--bd);flex-shrink:0;z-index:10}
+.tb .logo{font-size:18px;font-weight:900;color:#fff;font-style:italic;letter-spacing:2px;text-shadow:0 0 10px rgba(63,128,193,0.5)}
+.tb h1{font-size:14px;color:var(--ac2);margin-right:auto;white-space:nowrap}
+.btn{padding:6px 12px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);cursor:pointer;font-size:12px;border-radius:4px;font-family:inherit;white-space:nowrap;transition:all 0.2s}
+.btn:hover{background:rgba(63,128,193,0.2);border-color:var(--ac2);box-shadow:0 0 8px rgba(63,128,193,0.3)}
+.btn.a{background:rgba(63,128,193,0.25);border-color:var(--ac2);color:var(--ac2)}
+.btn.g{background:rgba(82,186,209,0.2);border-color:var(--gn);color:var(--gn)}
+.btn.g:hover{background:rgba(82,186,209,0.35)}
+.btn.r{background:rgba(224,64,64,0.15);border-color:var(--rd);color:var(--rd)}
+.btn.r:hover{background:rgba(224,64,64,0.3)}
+
+/* ===== 主体区域   ===== */
+.body{display:flex;flex:1;min-height:0}
+
+/* ===== 左侧面板 ===== */
+.lp{width:520px;flex-shrink:0;background:var(--bg2);border-right:2px solid var(--bd);display:flex;flex-direction:column;overflow:hidden}
+.lp-tabs{display:flex;border-bottom:2px solid var(--bd);flex-shrink:0;background:var(--bg3)}
+.lp-tab{flex:1;padding:10px 8px;font-size:12px;text-align:center;cursor:pointer;background:transparent;border:none;color:var(--tx2);font-family:inherit;border-bottom:3px solid transparent;transition:all 0.2s}
+.lp-tab:hover{color:var(--tx)}
+.lp-tab.on{color:var(--ac2);border-bottom-color:var(--ac2);background:rgba(63,128,193,0.1)}
+
+/* ===== 子标签页 ===== */
+.lp-subtabs{display:flex;border-bottom:1px solid var(--bd);flex-shrink:0;overflow-x:auto;flex-wrap:wrap;padding:6px;background:var(--bg);gap:4px}
+.lp-subtab{padding:6px 12px;font-size:11px;text-align:center;cursor:pointer;background:var(--bg2);border:1px solid var(--bd);color:var(--tx2);font-family:inherit;border-radius:4px;white-space:nowrap;transition:all 0.2s}
+.lp-subtab:hover{color:var(--tx);border-color:var(--ac2)}
+.lp-subtab.on{background:rgba(63,128,193,0.2);border-color:var(--ac2);color:var(--ac2)}
+
+/* ===== 工具栏 ===== */
+.lp-toolbar{display:flex;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--bd);flex-shrink:0;background:var(--bg)}
+.lp-toolbar .btn{padding:4px 10px;font-size:11px}
+
+/* ===== 搜索框 ===== */
+.lp-search{padding:8px 12px;border-bottom:1px solid var(--bd);flex-shrink:0;background:var(--bg)}
+.lp-search input{width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--bd);color:var(--tx);font-size:12px;border-radius:4px;outline:none;font-family:inherit;transition:border-color 0.2s}
+.lp-search input:focus{border-color:var(--ac2);box-shadow:0 0 0 2px rgba(63,128,193,0.2)}
+
+/* ===== 树内容区 ===== */
+.lp-scroll{flex:1;overflow-y:auto;padding:8px}
+.lp-scroll::-webkit-scrollbar{width:10px}
+.lp-scroll::-webkit-scrollbar-track{background:var(--bg)}
+.lp-scroll::-webkit-scrollbar-thumb{background:var(--bd);border-radius:5px}
+.lp-scroll::-webkit-scrollbar-thumb:hover{background:var(--ac)}
+
+/* ===== 右侧预览面板 ===== */
+.cp{flex:1;display:flex;flex-direction:column;min-width:0;background:#000}
+.cp-hdr{padding:8px 16px;background:var(--bg2);border-bottom:2px solid var(--bd);font-size:12px;color:var(--ac2);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.cp-frame{flex:1;border:none;background:#000;width:100%}
+
+/* ===== 树节点样式 ===== */
+.node{margin-bottom:0}
+.node .nr{display:flex;align-items:center;gap:4px;padding:5px 10px;cursor:pointer;font-size:12px;border-radius:5px;min-height:32px;border:1px solid transparent;margin-bottom:2px;user-select:none;transition:all 0.15s}
+.node .nr:hover{background:rgba(63,128,193,0.1);border-color:rgba(63,128,193,0.3)}
+.node .nr.dragging{opacity:0.35}
+.node .nr.drag-over-before{border-top:2px solid var(--ac2)}
+.node .nr.drag-over-after{border-bottom:2px solid var(--ac2)}
+.node .nr.selected{background:rgba(63,128,193,0.2);border-color:var(--ac2)}
+
+.node .nd{width:16px;font-size:10px;text-align:center;flex-shrink:0;color:var(--tx2)}
+.node .nl{flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.node .nt{font-size:9px;color:var(--tx2);background:var(--bg3);padding:1px 5px;border-radius:3px;margin-left:4px;flex-shrink:0}
+
+.node.tab>.nr .nl{color:var(--gn);font-weight:700;font-size:13px}
+.node.tab>.nr{border-color:rgba(82,186,209,0.3);background:rgba(82,186,209,0.05)}
+.node.container>.nr .nl{color:var(--ac2);font-weight:700}
+.node.container>.nr{border-color:rgba(63,128,193,0.2);background:rgba(63,128,193,0.05)}
+.node.title>.nr{cursor:default}
+.node.title>.nr .nl{color:var(--gold,#d4a84b);font-weight:600}
+
+.node.field>.nr,.node.choice>.nr,.node.action>.nr{padding-left:20px}
+.node.field>.nr .nl{color:var(--tx)}
+.node.choice>.nr .nl{color:var(--cy)}
+.node.action>.nr .nl{color:var(--gn)}
+
+.node .nv{font-size:11px;color:var(--cy);flex-shrink:0;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:var(--bg3);padding:2px 8px;border-radius:3px}
+.node .nv input{width:130px;padding:3px 6px;background:var(--bg);border:1px solid var(--bd);color:var(--tx);font-size:11px;border-radius:3px;outline:none;font-family:inherit}
+.node .nv select{min-width:130px;padding:3px 6px;background:var(--bg);border:1px solid var(--bd);color:var(--tx);font-size:11px;border-radius:3px;outline:none;font-family:inherit}
+.node .nv input:focus,.node .nv select:focus{border-color:var(--ac2)}
+
+.node .nc{margin-left:20px;border-left:1px solid rgba(63,128,193,0.2);padding-left:12px;display:none}
+.node.hidden>.nr{opacity:0.4}
+.node.expanded>.nc{display:block}
+
+/* ===== 可见性按钮 ===== */
+.vis-btn{width:20px;height:20px;border-radius:50%;border:none;cursor:pointer;font-size:9px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff;line-height:1;margin-left:3px;transition:all 0.15s}
+.vis-btn.on{background:var(--gn)}
+.vis-btn.on::after{content:"显"}
+.vis-btn.off{background:var(--rd)}
+.vis-btn.off::after{content:"隐"}
+
+/* ===== 操作按钮 ===== */
+.act-btn{width:20px;height:20px;border-radius:50%;border:1px solid var(--bd);background:var(--bg);color:var(--ac2);cursor:pointer;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;margin-left:2px;transition:all 0.15s}
+.act-btn:hover{background:rgba(82,186,209,0.2);border-color:var(--gn);color:var(--gn)}
+.act-btn.edit:hover{background:rgba(63,128,193,0.2);border-color:var(--ac2);color:var(--ac2)}
+.act-btn.del:hover{background:rgba(224,64,64,0.2);border-color:var(--rd);color:var(--rd)}
+.add-btn{width:20px;height:20px;border-radius:50%;border:1px solid var(--bd);background:var(--bg);color:var(--gn);cursor:pointer;font-size:14px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;transition:all 0.15s}
+.add-btn:hover{background:rgba(82,186,209,0.2);border-color:var(--gn);color:var(--gn)}
+.del-btn:hover{background:rgba(224,64,64,0.2);border-color:var(--rd);color:var(--rd)}
+
+/* ===== Toast ===== */
+.toast{position:fixed;bottom:24px;right:24px;padding:10px 20px;background:var(--gn);color:#fff;border-radius:6px;font-size:13px;z-index:200;font-weight:600;opacity:0;transition:opacity 0.3s;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.toast.on{opacity:1}
+.toast.err{background:var(--rd)}
+
+/* ===== 空状态 ===== */
+.empty{text-align:center;padding:60px 20px;color:var(--tx2);font-size:14px;line-height:2}
+.empty .icon{font-size:60px;color:var(--bd);margin-bottom:20px;text-shadow:0 0 20px rgba(63,128,193,0.3)}
+
+/* ===== 登录页 ===== */
+.login-overlay{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--bg) 0%,var(--bg2) 100%)}
+.login-card{width:420px;max-width:92vw;background:rgba(26,41,64,0.9);border:2px solid var(--bd);border-radius:16px;padding:40px 36px;backdrop-filter:blur(10px);box-shadow:0 0 60px rgba(63,128,193,0.2),0 8px 32px rgba(0,0,0,0.5)}
+.login-logo{text-align:center;margin-bottom:32px}
+.login-brand{font-size:32px;font-weight:900;color:#fff;font-style:italic;letter-spacing:4px;text-shadow:0 0 20px rgba(63,128,193,0.5)}
+.login-sub{font-size:14px;color:var(--ac2);margin-top:8px;letter-spacing:2px}
+.login-field{margin-bottom:20px}
+.login-field label{display:block;font-size:12px;color:var(--tx2);margin-bottom:8px;letter-spacing:1px}
+.login-field input{width:100%;padding:12px 16px;background:var(--bg);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-size:14px;font-family:inherit;outline:none;transition:border-color 0.2s}
+.login-field input:focus{border-color:var(--ac2);box-shadow:0 0 0 3px rgba(63,128,193,0.2)}
+.login-btn{width:100%;padding:14px;background:rgba(63,128,193,0.2);border:1px solid var(--ac2);border-radius:8px;color:var(--ac2);font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;letter-spacing:2px;transition:all 0.2s;margin-top:8px}
+.login-btn:hover{background:rgba(63,128,193,0.35);box-shadow:0 0 20px rgba(63,128,193,0.3)}
+.login-msg{text-align:center;margin-top:16px;font-size:12px;color:var(--rd);min-height:20px}
+.login-hint{text-align:center;margin-top:12px;font-size:11px;color:var(--tx2)}
+
+/* ===== 选择页 ===== */
+.choose-btn{width:100%;padding:18px 24px;background:rgba(63,128,193,0.1);border:1px solid var(--bd);border-radius:8px;cursor:pointer;font-family:inherit;text-align:left;display:flex;align-items:center;gap:16px;transition:all 0.2s}
+.choose-btn:hover{background:rgba(63,128,193,0.2);border-color:var(--ac2);box-shadow:0 0 16px rgba(63,128,193,0.2)}
+.choose-btn .icon{font-size:28px;flex-shrink:0}
+.choose-btn .text{flex:1}
+.choose-btn .title{display:block;font-size:15px;color:var(--tx);font-weight:700;margin-bottom:4px}
+.choose-btn .desc{font-size:11px;color:var(--tx2)}
+
+/* ===== 弹窗 ===== */
+.modal-bg{display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.85);align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal-box{background:var(--bg2);border:2px solid var(--bd);border-radius:12px;width:600px;max-width:95vw;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 0 50px rgba(63,128,193,0.3)}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--bd);flex-shrink:0}
+.modal-title{color:var(--ac2);font-weight:700;font-size:16px}
+.modal-close{width:28px;height:28px;border-radius:50%;border:1px solid var(--bd);background:var(--bg);color:var(--tx);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--rd);border-color:var(--rd);color:#fff}
+.modal-body{padding:18px;overflow-y:auto;flex:1}
+.modal-footer{padding:14px 18px;border-top:1px solid var(--bd);display:flex;justify-content:flex-end;gap:10px;flex-shrink:0}
+.modal-footer .btn{padding:8px 20px;font-size:13px}
+
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;color:var(--tx2);margin-bottom:6px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:8px 12px;background:var(--bg3);border:1px solid var(--bd);color:var(--tx);font-size:13px;border-radius:4px;outline:none;font-family:inherit}
+.form-group input:focus,.form-group select:focus{border-color:var(--ac2)}
+.form-group textarea{min-height:80px;resize:vertical}
+.form-group .hint{font-size:10px;color:var(--tx2);margin-top:4px}
+
+/* ===== 响应式 ===== */
+@media(max-width:768px){.lp{width:100%;border-right:none;border-bottom:2px solid var(--bd)}.body{flex-direction:column}.cp{min-height:300px}}
+</style>
+</head>
+<body>
+
+<!-- ====== 登录页 ====== -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-brand">昆仑</div>
+      <div class="login-sub">BIOS 仿真编辑器</div>
+    </div>
+    <div class="login-field">
+      <label>访问密码</label>
+      <input type="password" id="loginPwd" placeholder="请输入访问密码（留空直接登录）" autocomplete="off" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="login-btn" onclick="doLogin()">登 录</button>
+    <div class="login-msg" id="loginMsg"></div>
+    <div class="login-hint">输入密码以访问编辑器</div>
+  </div>
+</div>
+
+<!-- ====== 选择页 ====== -->
+<div class="login-overlay" id="chooseOverlay" style="display:none">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-brand">昆仑</div>
+      <div class="login-sub">BIOS 仿真编辑器</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <button class="choose-btn" onclick="newFromTemplate()">
+        <span class="icon">📄</span>
+        <span class="text"><b class="title">从模板新建</b><span class="desc">使用内置昆仑 BIOS 模板创建仿真页面</span></span>
+      </button>
+      <button class="choose-btn" onclick="openExistingFile()">
+        <span class="icon">📂</span>
+        <span class="text"><b class="title">打开已有文件</b><span class="desc">打开已有的昆仑 BIOS 模板 HTML 文件进行编辑</span></span>
+      </button>
+    </div>
+    <div class="login-msg" id="chooseMsg"></div>
+    <div class="login-hint">选择一个模式以继续</div>
+  </div>
+</div>
+
+<!-- ====== 主编辑器 ====== -->
+<div id="appMain" style="display:none">
+<div class="tb">
+  <span class="logo">昆仑</span>
+  <h1>BIOS 编辑器</h1>
+  <button class="btn a" onclick="openFile()">打开文件</button>
+  <button class="btn g" onclick="saveFile()">保存</button>
+  <button class="btn" onclick="downloadFile()">下载</button>
+  <button class="btn" onclick="exportCSV()" title="导出当前树结构为CSV表格">导出CSV</button>
+  <button class="btn" onclick="importCSV()" title="从CSV表格导入数据更新树结构">导入CSV</button>
+  <span id="fileName" style="font-size:11px;color:var(--tx2);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">未打开文件</span>
+</div>
+
+<div class="body">
+<div class="lp">
+  <!-- Tab 切换 -->
+  <div class="lp-tabs">
+    <button class="lp-tab on" onclick="switchMainTab('tree')">树结构</button>
+    <button class="lp-tab" onclick="switchMainTab('preview')">预览配置</button>
+    <button class="lp-tab" onclick="switchMainTab('log')">日志</button>
+  </div>
+  <!-- 工具栏 -->
+  <div class="lp-toolbar" id="treeToolbar">
+    <button class="btn" onclick="expandAll()">全部展开</button>
+    <button class="btn" onclick="collapseAll()">全部折叠</button>
+    <button class="btn" onclick="addTab()">+Tab</button>
+    <button class="btn" onclick="addRootNode()">+根节点</button>
+  </div>
+  <!-- 搜索 -->
+  <div class="lp-search" id="searchBar"><input id="searchInput" placeholder="搜索节点..." oninput="renderTree()"></div>
+  <!-- 树内容 -->
+  <div class="lp-scroll" id="treeContent">
+    <div class="empty" id="emptyHint">
+      <div class="icon">昆仑</div>
+      <b>BIOS 编辑器</b><br>
+      请打开昆仑 BIOS 模板文件
+    </div>
+  </div>
+</div>
+
+<div class="cp">
+  <div class="cp-hdr"><span>预览 — 昆仑固件设置工具</span><button class="btn" onclick="refreshPreview()" style="margin-left:auto;font-size:10px">刷新</button></div>
+  <iframe class="cp-frame" id="previewFrame"></iframe>
+</div>
+</div>
+</div>
+
+<!-- ====== 节点编辑弹窗 ====== -->
+<div class="modal-bg" id="nodeEditModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="nodeModalTitle">添加节点</span>
+      <button class="modal-close" onclick="closeNodeModal()">×</button>
+    </div>
+    <div class="modal-body" id="nodeModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeNodeModal()">取消</button>
+      <button class="btn g" onclick="submitNodeModal()">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== 全局状态 =====
+var S = {
+  tree: null,       // 树结构数据 { tabs: [...] }
+  prefix: '',
+  suffix: '',
+  curHTML: '',
+  fileName: '',
+  fileHandle: null
+};
+
+var _mainTab = 'tree';
+var _dragSrcPath = null;
+var _logLines = [];
+
+// 节点类型配置
+var NODE_TYPES = {
+  tab:       { name: '页面标签', icon: '📑', color: '#52bad1' },
+  container: { name: '容器/分组', icon: '📁', color: '#5090d8' },
+  title:     { name: '分区标题', icon: '━', color: '#d4a84b' },
+  field:     { name: '字段(只读)', icon: '⚙', color: '#e0e8f0' },
+  choice:    { name: '选择(下拉)', icon: '☰', color: '#00a8e8' },
+  action:    { name: '操作(链接)', icon: '▶', color: '#52bad1' }
+};
+
+// ===== 内置昆仑模板 =====
+var KUNLUN_TEMPLATE = {
+  "tabs": [
+    {
+      "type": "tab", "label": "主页", "desc": "系统信息概览 — 查看固件版本、处理器、内存、网卡等基本硬件信息。",
+      "children": [
+        { "type": "title", "label": "固件信息" },
+        { "type": "field", "label": "固件厂商", "value": "昆仑太科" },
+        { "type": "field", "label": "遵循标准", "value": "UEFI 2.7; PI 1.6" },
+        { "type": "field", "label": "固件版本", "value": "CHIYOU-SI-9022" },
+        { "type": "field", "label": "建立时间和日期", "value": "09/24/2024 10:47:29" },
+        { "type": "field", "label": "固件序列号", "value": "b7b1b18a-ac1b-430e-8c6d" },
+        { "type": "field", "label": "基础版本号", "value": "4.00.0001" },
+        { "type": "field", "label": "访问权限", "value": "管理员" },
+        { "type": "title", "label": "主板信息" },
+        { "type": "field", "label": "主板型号", "value": "XC-TRD200M" },
+        { "type": "field", "label": "主板序列号", "value": "240944209400389" },
+        { "type": "title", "label": "系统信息" },
+        { "type": "field", "label": "系统UUID", "value": "6AD678B6-BF9B-11D3-9D33-60CF84A9D198" },
+        { "type": "field", "label": "系统序列号", "value": "DK7AHGC440013" },
+        { "type": "title", "label": "产品型号信息" },
+        { "type": "field", "label": "产品型号", "value": "ASUSPRO DF500SQ" },
+        { "type": "title", "label": "处理器信息" },
+        { "type": "field", "label": "处理器名称", "value": "FT-D2000/8" },
+        { "type": "field", "label": "处理器频率", "value": "2298 MHz" },
+        { "type": "field", "label": "处理器核数", "value": "8核" },
+        { "type": "title", "label": "内存信息" },
+        { "type": "field", "label": "总内存", "value": "8GB" },
+        { "type": "field", "label": "内存频率", "value": "2660 MHz" },
+        { "type": "field", "label": "内存插槽数", "value": "2" },
+        { "type": "title", "label": "网卡信息" },
+        { "type": "field", "label": "MAC 地址", "value": "60-CF-84-A9-D1-98" },
+        { "type": "field", "label": "EC 版本", "value": "V02.05" },
+        { "type": "choice", "label": "系统语言", "value": "中文", "options": ["中文", "English"] },
+        { "type": "action", "label": "系统日期和时间", "target": "home/datetime" }
+      ]
+    },
+    {
+      "type": "tab", "label": "高级", "desc": "高级配置 — 包括 CPU、内存、设备、IO、PCIe、USB、SATA、电源管理等。",
+      "children": [
+        {
+          "type": "container", "label": "CPU 信息", "desc": "CPU 详细配置参数",
+          "children": [
+            { "type": "title", "label": "CPU 信息" },
+            { "type": "field", "label": "处理器个数", "value": "1" },
+            { "type": "field", "label": "处理器核数", "value": "8核" },
+            { "type": "field", "label": "一级数据缓存大小", "value": "256KB" },
+            { "type": "field", "label": "一级指令缓存大小", "value": "256KB" },
+            { "type": "field", "label": "二级缓存大小", "value": "8MB" },
+            { "type": "field", "label": "三级缓存大小", "value": "4MB" },
+            { "type": "field", "label": "CPU Family ID", "value": "101h" }
+          ]
+        },
+        {
+          "type": "container", "label": "内存信息", "desc": "内存配置参数",
+          "children": [
+            { "type": "title", "label": "内存信息" },
+            { "type": "field", "label": "总内存", "value": "8GB" },
+            { "type": "field", "label": "内存频率", "value": "2666 MHz" },
+            { "type": "field", "label": "DIMM1", "value": "未安装" },
+            { "type": "field", "label": "DIMM2", "value": "DDR4 8GB" }
+          ]
+        },
+        {
+          "type": "container", "label": "设备信息", "desc": "设备信息概览",
+          "children": [
+            { "type": "title", "label": "设备信息" },
+            { "type": "action", "label": "SATA 设备信息", "target": "advanced/device/sata" },
+            { "type": "action", "label": "NVME 设备信息", "target": "advanced/device/nvme" },
+            { "type": "action", "label": "USB 设备信息", "target": "advanced/device/usb" },
+            { "type": "action", "label": "PCIE 设备信息", "target": "advanced/device/pcie" },
+            { "type": "action", "label": "NIC 设备信息", "target": "advanced/device/nic" },
+            { "type": "action", "label": "显卡信息", "target": "advanced/device/gpu" }
+          ]
+        },
+        {
+          "type": "container", "label": "网卡信息", "desc": "网卡配置选项",
+          "children": [
+            { "type": "title", "label": "网卡信息" },
+            { "type": "field", "label": "MAC 地址", "value": "60-CF-84-A9-D1-98" },
+            { "type": "choice", "label": "网络栈", "value": "启用", "options": ["启用", "关闭"] },
+            { "type": "choice", "label": "Ipv4 PXE 支持", "value": "启用", "options": ["启用", "关闭"] },
+            { "type": "choice", "label": "Ipv4 HTTPs 支持", "value": "关闭", "options": ["启用", "关闭"] }
+          ]
+        },
+        {
+          "type": "container", "label": "IO 配置", "desc": "IO 设备配置",
+          "children": [
+            { "type": "title", "label": "IO 配置" },
+            { "type": "choice", "label": "蓝牙控制器", "value": "启用", "options": ["启用", "关闭"] },
+            { "type": "choice", "label": "网口控制", "value": "启用", "options": ["启用", "关闭"] },
+            { "type": "choice", "label": "Wi-Fi控制器", "value": "启用", "options": ["启用", "关闭"] },
+            { "type": "choice", "label": "串口端口控制", "value": "启用", "options": ["启用", "关闭"] }
+          ]
+        },
+        {
+          "type": "container", "label": "PCIE 配置", "desc": "PCIE 插槽配置",
+          "children": [
+            { "type": "title", "label": "PCIE 配置" },
+            { "type": "choice", "label": "设置M.2 SOCKET3 插槽", "value": "自动", "options": ["自动", "关闭", "启用"] },
+            { "type": "choice", "label": "设置PCIE x16_1 插槽", "value": "自动", "options": ["自动", "关闭", "启用"] },
+            { "type": "choice", "label": "设置PCIE x16_2 插槽", "value": "自动", "options": ["自动", "关闭", "启用"] },
+            { "type": "choice", "label": "设置PCIE x1 插槽", "value": "自动", "options": ["自动", "关闭", "启用"] }
+          ]
+        },
+        {
+          "type": "container", "label": "USB 配置", "desc": "USB 端口配置",
+          "children": [
+            { "type": "title", "label": "USB 配置" },
+            { "type": "choice", "label": "USB_E1", "value": "启用", "options": ["启用", "关闭"] },
+            { "type": "choice", "label": "USB_E2", "value": "启用", "options": ["启用", "关闭"] },
+            { "type": "choice", "label": "USB_E3", "value": "启用", "options": ["启用", "关闭"] },
+            { "type": "choice", "label": "USB_E4", "value": "启用", "options": ["启用", "关闭"] },
+            { "type": "choice", "label": "U32G1_E1", "value": "启用", "options": ["启用", "关闭"] },
+            { "type": "choice", "label": "U32G1_E2", "value": "启用", "options": ["启用", "关闭"] }
+          ]
+        },
+        {
+          "type": "container", "label": "系统监控", "desc": "系统监控 — 查看硬件温度与电压",
+          "children": [
+            { "type": "title", "label": "系统监控" },
+            { "type": "action", "label": "温度监控", "target": "advanced/monitor/temperature" },
+            { "type": "action", "label": "电压监控", "target": "advanced/monitor/voltage" }
+          ]
+        },
+        {
+          "type": "container", "label": "电源管理", "desc": "电源管理配置",
+          "children": [
+            { "type": "title", "label": "电源管理" },
+            { "type": "choice", "label": "USB 供电（S5）", "value": "关闭", "options": ["关闭", "启用"] },
+            { "type": "choice", "label": "断电恢复后电源状态", "value": "关闭", "options": ["关闭", "启用"] }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "tab", "label": "安全维护", "desc": "安全维护 — 密码管理与安全配置。",
+      "children": [
+        { "type": "title", "label": "安全维护" },
+        { "type": "field", "label": "管理员密码状态", "value": "未安装" },
+        { "type": "field", "label": "用户密码状态", "value": "未安装" },
+        { "type": "action", "label": "管理员密码" },
+        { "type": "action", "label": "用户密码" },
+        { "type": "action", "label": "Tls 认证配置" },
+        { "type": "action", "label": "HDD 安全配置" },
+        { "type": "action", "label": "安全启动配置" }
+      ]
+    },
+    {
+      "type": "tab", "label": "启动", "desc": "启动配置 — 设置启动设备优先级。",
+      "children": [
+        { "type": "title", "label": "启动顺序" },
+        { "type": "field", "label": "启动设备1", "value": "硬盘驱动器 (SSD)" },
+        { "type": "field", "label": "启动设备2", "value": "USB 存储设备" },
+        { "type": "field", "label": "启动设备3", "value": "网络启动 (PXE)" }
+      ]
+    },
+    {
+      "type": "tab", "label": "保存&退出", "desc": "保存&退出 — 保存更改、放弃更改、加载默认值。",
+      "children": [
+        { "type": "title", "label": "退出选项" },
+        { "type": "action", "label": "保存更改并退出", "popup": { "title": "保存并退出", "message": "所有固件设置将被写入 NVRAM，系统将重启。" } },
+        { "type": "action", "label": "放弃更改并退出", "popup": { "title": "放弃更改", "message": "所有未保存的修改将丢失。" } },
+        { "type": "action", "label": "加载优化默认值", "popup": { "title": "加载默认值", "message": "所有设置将恢复为出厂默认配置。" } }
+      ]
+    }
+  ]
+};
+
+// ===== 登录 =====
+function doLogin() {
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('chooseOverlay').style.display = 'flex';
+}
+
+// ===== 选择页 =====
+function newFromTemplate() {
+  S.tree = JSON.parse(JSON.stringify(KUNLUN_TEMPLATE));
+  S.fileName = '昆仑BIOS模板.html';
+  document.getElementById('fileName').textContent = S.fileName;
+  document.getElementById('chooseOverlay').style.display = 'none';
+  document.getElementById('appMain').style.display = 'flex';
+  document.getElementById('emptyHint').style.display = 'none';
+  rebuildAndPreview();
+  renderTree();
+  showToast('已创建新模板');
+  log('模板已加载，共 ' + S.tree.tabs.length + ' 个Tab');
+}
+
+async function openExistingFile() {
+  try {
+    await openFile();
+    if (S.tree) {
+      document.getElementById('chooseOverlay').style.display = 'none';
+      document.getElementById('appMain').style.display = 'flex';
+    }
+  } catch (e) {
+    document.getElementById('chooseMsg').textContent = '打开失败: ' + e.message;
+  }
+}
+
+// ===== 文件操作 =====
+async function openFile() {
+  try {
+    var fh = null, text = '', name = '';
+    try {
+      var [h] = await window.showOpenFilePicker({ types: [{ accept: { 'text/html': ['.html'] } }] });
+      fh = h; var f = await h.getFile(); text = await f.text(); name = f.name;
+    } catch (e) {
+      text = await new Promise(function(resolve, reject) {
+        var inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.html';
+        inp.onchange = function() {
+          var ff = inp.files[0];
+          if (ff) { var r = new FileReader(); r.onload = function() { resolve(r.result); }; r.readAsText(ff); }
+          else reject(new Error('no file'));
+        };
+        inp.click();
+      });
+      name = 'unknown.html';
+    }
+    loadHTML(text, name, fh);
+  } catch (e) {
+    if (e.name !== 'AbortError') showToast('打开失败: ' + e.message, true);
+  }
+}
+
+function loadHTML(html, name, handle) {
+  // 尝试从 <script id="biosTree"> 提取 JSON
+  var re = /<script[^>]*\bid\s*=\s*["']biosTree["'][^>]*>\s*([\s\S]*?)\s*<\/script>/i;
+  var m = html.match(re);
+  if (m) {
+    var jsonText = m[1];
+    var jsonStart = html.indexOf(jsonText);
+    S.prefix = html.substring(0, jsonStart);
+    S.suffix = html.substring(jsonStart + jsonText.length);
+    try { S.tree = JSON.parse(jsonText); } catch (e) { showToast('JSON 解析失败: ' + e.message, true); return; }
+  } else {
+    // 尝试直接解析为树结构
+    try {
+      var parsed = JSON.parse(html);
+      if (parsed.tabs) {
+        S.tree = parsed;
+      } else {
+        // 尝试转换旧格式
+        S.tree = convertLegacyFormat(parsed);
+      }
+    } catch (e) {
+      showToast('无法解析文件，请确认是昆仑BIOS模板文件', true);
+      return;
+    }
+  }
+  S.fileHandle = handle;
+  S.fileName = name;
+  document.getElementById('fileName').textContent = name;
+  document.getElementById('emptyHint').style.display = 'none';
+  rebuildAndPreview();
+  renderTree();
+  showToast('已加载: ' + name);
+  log('文件已加载: ' + name);
+}
+
+function convertLegacyFormat(data) {
+  // 转换旧的扁平格式为树结构
+  var tree = { tabs: [] };
+  // 这里可以根据需要添加转换逻辑
+  return tree;
+}
+
+// ===== 核心：树结构 → 昆仑BIOS HTML =====
+function rebuildAndPreview() {
+  if (!S.tree) return;
+  var html = generateKunlunBIOS(S.tree);
+  S.curHTML = html;
+  refreshPreview();
+}
+
+function generateKunlunBIOS(tree) {
+  var tabs = tree.tabs || [];
+
+  // 生成导航按钮
+  var navBtns = '';
+  var tabIds = [];
+  for (var i = 0; i < tabs.length; i++) {
+    var tabId = 'tab' + i;
+    tabIds.push(tabId);
+    navBtns += '<div class="btn-wrap"><button onclick="navigateToTab(\'' + tabId + '\')" id="btn' + (i+1) + '">' + esc(tabs[i].label) + '</button></div>\n';
+  }
+  // 填充空按钮位
+  while (tabIds.length < 7) { navBtns += '<div class="btn-wrap"></div>\n'; tabIds.push(''); }
+
+  // 生成路由
+  var routes = generateRoutes(tree);
+
+  return '<!DOCTYPE html>\n<html lang="zh-CN">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">\n<title>昆仑固件设置工具</title>\n<style>\n' + KUNLUN_CSS + '\n</style>\n</head>\n<body>\n<canvas id="bgCanvas"></canvas>\n<div class="container">\n  <div class="section1"><div class="header-box"><span class="header-title">昆仑固件设置工具</span></div></div>\n  <div class="nav-wrapper"><div class="section2" id="navBar">\n' + navBtns + '  </div><div class="nav-fill"></div></div>\n  <div class="middle-section">\n    <div class="left-section" id="leftSection"><div id="leftContent"></div></div>\n    <div class="right-section">\n      <div class="right-top"><div id="functionDesc" style="font-size:1rem;color:#0000d1;line-height:1.6;">选择一个功能查看详细说明</div></div>\n      <div class="right-bottom">\n        <table class="help-table">\n          <tr><td>→ ←</td><td>:</td><td>选择界面</td></tr>\n          <tr><td>↑ ↓</td><td>:</td><td>选择功能</td></tr>\n          <tr><td>+ / -</td><td>:</td><td>改变数值</td></tr>\n          <tr><td>F1</td><td>:</td><td>一般帮助</td></tr>\n          <tr><td>F5</td><td>:</td><td>加载默认值</td></tr>\n          <tr><td>F10</td><td>:</td><td>保存并退出</td></tr>\n          <tr><td>ESC</td><td>:</td><td>退出</td></tr>\n          <tr><td>Enter</td><td>:</td><td>选择 / 进入子菜单</td></tr>\n        </table>\n      </div>\n    </div>\n  </div>\n  <div class="section3"><div class="footer-box"><span class="footer-text">版权所有(C) 2006-2024&emsp;&emsp;昆仑太科（北京）&emsp;&emsp;技术股份有限公司</span></div></div>\n</div>\n<div id="toast"></div>\n<script id="biosTree">' + JSON.stringify(tree) + '</' + 'script>\n<script>\n' + KUNLUN_JS + '\nvar ROUTES = ' + JSON.stringify(routes) + ';\nvar TAB_IDS = ' + JSON.stringify(tabIds) + ';\ninitKunlun();\n<' + '/script>\n</body>\n</html>';
+}
+
+function generateRoutes(tree) {
+  var routes = {};
+  var tabs = tree.tabs || [];
+
+  for (var i = 0; i < tabs.length; i++) {
+    var tab = tabs[i];
+    var tabKey = 'tab' + i;
+    var isSub = false;
+
+    routes[tabKey] = {
+      tab: i + 1,
+      isSub: false,
+      desc: tab.desc || '',
+      content: generateTabContent(tab, tabKey)
+    };
+
+    // 生成子页面
+    if (tab.children) {
+      for (var j = 0; j < tab.children.length; j++) {
+        var child = tab.children[j];
+        if (child.type === 'container') {
+          var subKey = tabKey + '/' + j;
+          routes[subKey] = {
+            tab: i + 1,
+            isSub: true,
+            desc: child.desc || '',
+            content: generateContainerContent(child, subKey)
+          };
+        }
+      }
+    }
+  }
+
+  return routes;
+}
+
+function generateTabContent(tab, tabKey) {
+  var h = '<table class="content-table">';
+  var children = tab.children || [];
+  var hasContainers = false;
+
+  // 检查是否有 container 子节点（需要显示为链接）
+  for (var i = 0; i < children.length; i++) {
+    if (children[i].type === 'container') { hasContainers = true; break; }
+  }
+
+  if (hasContainers) {
+    // 显示为链接列表
+    for (var i = 0; i < children.length; i++) {
+      var child = children[i];
+      if (child.visible === false) continue;
+      if (child.type === 'container') {
+        h += '<tr><td class="nav-link" onclick="navigate(\'' + tabKey + '/' + i + '\')">' + esc(child.label) + '</td><td></td></tr>\n';
+      } else if (child.type === 'title') {
+        h += '<tr><td class="section-header" colspan="2">' + esc(child.label) + '</td></tr>\n';
+      } else if (child.type === 'field') {
+        h += '<tr><td>' + esc(child.label) + '</td><td>' + esc(child.value || '') + '</td></tr>\n';
+      } else if (child.type === 'choice') {
+        var opts = child.options || [];
+        h += '<tr><td style="color:#0000d1;">' + esc(child.label) + '</td><td><select onchange="showToast(\'已切换为: \'+this.value)">';
+        for (var oi = 0; oi < opts.length; oi++) {
+          h += '<option' + (opts[oi] === child.value ? ' selected' : '') + '>' + esc(opts[oi]) + '</option>';
+        }
+        h += '</select></td></tr>\n';
+      }
+    }
+  } else {
+    // 直接显示内容
+    for (var i = 0; i < children.length; i++) {
+      var child = children[i];
+      if (child.visible === false) continue;
+      if (child.type === 'title') {
+        h += '<tr><td class="section-header" colspan="2">' + esc(child.label) + '</td></tr>\n';
+      } else if (child.type === 'field') {
+        h += '<tr><td>' + esc(child.label) + '</td><td>' + esc(child.value || '') + '</td></tr>\n';
+      } else if (child.type === 'choice') {
+        var opts = child.options || [];
+        h += '<tr><td style="color:#0000d1;">' + esc(child.label) + '</td><td><select onchange="showToast(\'已切换为: \'+this.value)">';
+        for (var oi = 0; oi < opts.length; oi++) {
+          h += '<option' + (opts[oi] === child.value ? ' selected' : '') + '>' + esc(opts[oi]) + '</option>';
+        }
+        h += '</select></td></tr>\n';
+      } else if (child.type === 'action') {
+        h += '<tr><td class="nav-link" onclick="showToast(\'执行: ' + esc(child.label) + '\')">' + esc(child.label) + '</td><td></td></tr>\n';
+      }
+    }
+  }
+
+  h += '</table>';
+  return h;
+}
+
+function generateContainerContent(container, parentKey) {
+  var h = '<table class="content-table">';
+  h += '<tr><td class="section-header" colspan="2">' + esc(container.label) + '</td></tr>\n';
+
+  var children = container.children || [];
+  for (var i = 0; i < children.length; i++) {
+    var child = children[i];
+    if (child.visible === false) continue;
+
+    if (child.type === 'title') {
+      h += '<tr><td class="section-header" colspan="2">' + esc(child.label) + '</td></tr>\n';
+    } else if (child.type === 'field') {
+      h += '<tr><td>' + esc(child.label) + '</td><td>' + esc(child.value || '') + '</td></tr>\n';
+    } else if (child.type === 'choice') {
+      var opts = child.options || [];
+      h += '<tr><td style="color:#0000d1;">' + esc(child.label) + '</td><td><select onchange="showToast(\'已切换为: \'+this.value)">';
+      for (var oi = 0; oi < opts.length; oi++) {
+        h += '<option' + (opts[oi] === child.value ? ' selected' : '') + '>' + esc(opts[oi]) + '</option>';
+      }
+      h += '</select></td></tr>\n';
+    } else if (child.type === 'action') {
+      var popupCode = '';
+      if (child.popup) {
+        popupCode = 'onclick="showPopup(' + escAttr(JSON.stringify(child.popup)) + ')"';
+      }
+      h += '<tr><td class="nav-link" ' + popupCode + '>' + esc(child.label) + '</td><td></td></tr>\n';
+    }
+  }
+
+  h += '</table>';
+  return h;
+}
+
+function refreshPreview() {
+  var frame = document.getElementById('previewFrame');
+  if (!S.curHTML) {
+    frame.srcdoc = '<html><body style="background:#000;display:flex;align-items:center;justify-content:center;height:100vh"><p style="color:#8b9eb5;font-family:Microsoft YaHei,sans-serif">请先打开文件</p></body></html>';
+    return;
+  }
+  var oldUrl = frame.dataset.blobUrl;
+  if (oldUrl) URL.revokeObjectURL(oldUrl);
+  var blob = new Blob([S.curHTML], { type: 'text/html;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  frame.dataset.blobUrl = url;
+  frame.src = url;
+}
+
+async function saveFile() {
+  if (!S.curHTML) { showToast('没有可保存的内容', true); return; }
+  if (S.fileHandle) {
+    try {
+      var w = await S.fileHandle.createWritable();
+      await w.write(S.curHTML);
+      await w.close();
+      showToast('已保存');
+      return;
+    } catch (e) {}
+  }
+  downloadFile();
+}
+
+function downloadFile() {
+  if (!S.curHTML) { showToast('没有可下载的内容', true); return; }
+  var blob = new Blob([S.curHTML], { type: 'text/html;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = S.fileName || '昆仑BIOS模板.html';
+  a.click();
+  showToast('已下载');
+}
+
+// ===== Tab 切换 =====
+function switchMainTab(tab) {
+  _mainTab = tab;
+  document.querySelectorAll('.lp-tab').forEach(function(b) {
+    b.classList.remove('on');
+    if (tab === 'tree' && b.textContent.indexOf('树') === 0) b.classList.add('on');
+    else if (tab === 'preview' && b.textContent.indexOf('预览') === 0) b.classList.add('on');
+    else if (tab === 'log' && b.textContent.indexOf('日志') === 0) b.classList.add('on');
+  });
+
+  var toolbar = document.getElementById('treeToolbar');
+  var search = document.getElementById('searchBar');
+
+  if (tab === 'tree') {
+    toolbar.style.display = 'flex';
+    search.style.display = 'block';
+    renderTree();
+  } else if (tab === 'preview') {
+    toolbar.style.display = 'none';
+    search.style.display = 'none';
+    renderPreviewConfig();
+  } else {
+    toolbar.style.display = 'none';
+    search.style.display = 'none';
+    renderLogView();
+  }
+}
+
+// ===== 树渲染 =====
+function renderTree() {
+  if (!S.tree) return;
+  var ft = document.getElementById('searchInput').value.trim().toLowerCase();
+  var h = '';
+
+  var tabs = S.tree.tabs || [];
+  for (var i = 0; i < tabs.length; i++) {
+    h += renderNode(tabs[i], 'tabs.' + i, ft, 0);
+  }
+
+  if (!h) {
+    h = '<div class="empty"><div style="font-size:30px;color:var(--bd)">空</div>暂无节点，点击"+Tab"添加</div>';
+  }
+
+  document.getElementById('treeContent').innerHTML = h;
+}
+
+function renderNode(node, path, ft, depth) {
+  if (!node) return '';
+  if (!node.type) node.type = node.children ? 'container' : 'field';
+
+  var match = !ft || (node.label || '').toLowerCase().indexOf(ft) >= 0 || (node.value || '').toString().toLowerCase().indexOf(ft) >= 0;
+  var typeConf = NODE_TYPES[node.type] || NODE_TYPES.field;
+  var h = '';
+  var typeCls = node.type;
+  var hiddenCls = node.visible === false ? ' hidden' : '';
+  var hasChildren = node.children && node.children.length > 0;
+  var isExpanded = node.type === 'tab' || node.type === 'container';
+  var expanded = isExpanded ? ' expanded' : '';
+  var icon = hasChildren ? '▼' : typeConf.icon;
+
+  h += '<div class="node ' + typeCls + expanded + hiddenCls + '" data-path="' + escAttr(path) + '">';
+  h += '<div class="nr" draggable="true" ondragstart="dragStart(event,\'' + escAttr(path) + '\')" ondragover="dragOver(event,\'' + escAttr(path) + '\')" ondragleave="dragLeave(event)" ondrop="dragDrop(event,\'' + escAttr(path) + '\')" ondragend="dragEnd(event)" onclick="toggleExpand(\'' + escAttr(path) + '\')">';
+  h += '<span class="nd">' + (hasChildren ? '▼' : typeConf.icon) + '</span>';
+  h += '<span class="nl">' + esc(node.label || '(未命名)') + '</span>';
+  h += '<span class="nt" style="color:' + typeConf.color + '">' + typeConf.name + '</span>';
+
+  // 值显示
+  if (node.type === 'field') {
+    h += '<span class="nv">' + esc(node.value || '') + '</span>';
+  } else if (node.type === 'choice') {
+    h += '<span class="nv">' + esc(node.value || '') + '</span>';
+  }
+
+  // 操作按钮
+  h += '<button class="vis-btn ' + (node.visible !== false ? 'on' : 'off') + '" onclick="event.stopPropagation();toggleVis(\'' + escAttr(path) + '\')" title="切换可见性"></button>';
+  h += '<button class="act-btn edit" onclick="event.stopPropagation();editNode(\'' + escAttr(path) + '\')" title="编辑节点">✎</button>';
+
+  if (hasChildren || node.type === 'tab' || node.type === 'container') {
+    h += '<button class="add-btn" onclick="event.stopPropagation();openAdd(\'' + escAttr(path) + '.children\')" title="添加子节点">+</button>';
+  }
+
+  h += '<button class="add-btn del-btn" onclick="event.stopPropagation();delNode(\'' + escAttr(path) + '\')" title="删除此节点">−</button>';
+  h += '</div>';
+
+  // 子节点
+  if (hasChildren) {
+    h += '<div class="nc">';
+    for (var ci = 0; ci < node.children.length; ci++) {
+      h += renderNode(node.children[ci], path + '.children.' + ci, ft, depth + 1);
+    }
+    h += '</div>';
+  }
+
+  h += '</div>';
+
+  if (!match && ft) {
+    // 搜索模式下，不匹配的隐藏（但容器如果有匹配子节点则保留）
+    if (hasChildren) {
+      // 检查子节点是否匹配
+      var hasMatchChild = false;
+      for (var ci = 0; ci < node.children.length; ci++) {
+        if (nodeMatches(node.children[ci], ft)) { hasMatchChild = true; break; }
+      }
+      if (hasMatchChild) return h;
+    }
+    return '';
+  }
+  return h;
+}
+
+function nodeMatches(node, ft) {
+  if (!node) return false;
+  if ((node.label || '').toLowerCase().indexOf(ft) >= 0) return true;
+  if ((node.value || '').toString().toLowerCase().indexOf(ft) >= 0) return true;
+  if (node.children) {
+    for (var i = 0; i < node.children.length; i++) {
+      if (nodeMatches(node.children[i], ft)) return true;
+    }
+  }
+  return false;
+}
+
+function toggleExpand(path) {
+  var el = document.querySelector('.node[data-path="' + escAttr(path) + '"]');
+  if (el && (el.classList.contains('tab') || el.classList.contains('container'))) {
+    el.classList.toggle('expanded');
+    var nd = el.querySelector(':scope > .nr > .nd');
+    if (nd) nd.textContent = el.classList.contains('expanded') ? '▼' : '▶';
+  }
+}
+
+function expandAll() {
+  document.querySelectorAll('.node.tab,.node.container').forEach(function(el) {
+    el.classList.add('expanded');
+    var nd = el.querySelector(':scope > .nr > .nd');
+    if (nd) nd.textContent = '▼';
+  });
+}
+
+function collapseAll() {
+  document.querySelectorAll('.node.tab,.node.container').forEach(function(el) {
+    el.classList.remove('expanded');
+    var nd = el.querySelector(':scope > .nr > .nd');
+    if (nd) nd.textContent = '▶';
+  });
+}
+
+// ===== 节点操作 =====
+function resolveNode(path) {
+  if (!path || !S.tree) return null;
+  var parts = path.split('.');
+  var obj = S.tree;
+  for (var i = 0; i < parts.length; i++) {
+    var p = parts[i];
+    if (p === 'children' || p === 'tabs') { obj = obj[p]; continue; }
+    if (/^\d+$/.test(p)) {
+      if (!Array.isArray(obj)) return null;
+      obj = obj[parseInt(p)];
+    } else {
+      if (obj === undefined || obj === null) return null;
+      obj = obj[p];
+    }
+    if (obj === undefined) return null;
+  }
+  return obj;
+}
+
+function resolveParentArray(path) {
+  var parts = path.split('.');
+  var childrenIdx = -1;
+  for (var i = parts.length - 2; i >= 0; i--) {
+    if ((parts[i] === 'children' || parts[i] === 'tabs') && i + 1 < parts.length && /^\d+$/.test(parts[i + 1])) {
+      childrenIdx = i;
+      break;
+    }
+  }
+  if (childrenIdx < 0) return null;
+  var idx = parseInt(parts[childrenIdx + 1]);
+  if (isNaN(idx)) return null;
+  var parentPath = parts.slice(0, childrenIdx).join('.');
+  var parent = resolveNode(parentPath);
+  if (!parent || !Array.isArray(parent[parts[childrenIdx]])) return null;
+  return { arr: parent[parts[childrenIdx]], idx: idx, key: parts[childrenIdx] };
+}
+
+function toggleVis(path) {
+  var node = resolveNode(path);
+  if (node) {
+    node.visible = node.visible === false ? true : false;
+    rebuildAndPreview();
+    renderTree();
+    log('切换可见性: ' + (node.label || ''));
+  }
+}
+
+function delNode(path) {
+  var parentInfo = resolveParentArray(path);
+  if (!parentInfo) { showToast('无法删除根节点', true); return; }
+  var node = parentInfo.arr[parentInfo.idx];
+  var childCount = 0;
+  if (node.children) childCount = node.children.length;
+  var msg = '确定删除 "' + (node.label || '') + '" 吗？';
+  if (childCount > 0) msg += '\n（将同时删除 ' + childCount + ' 个子节点）';
+  if (!confirm(msg)) return;
+  parentInfo.arr.splice(parentInfo.idx, 1);
+  rebuildAndPreview();
+  renderTree();
+  showToast('已删除');
+  log('删除节点: ' + (node.label || ''));
+}
+
+function addTab() {
+  var label = prompt('请输入Tab名称:', '新标签页');
+  if (!label) return;
+  if (!S.tree.tabs) S.tree.tabs = [];
+  S.tree.tabs.push({ type: 'tab', label: label, desc: '', children: [] });
+  rebuildAndPreview();
+  renderTree();
+  showToast('已添加Tab: ' + label);
+  log('添加Tab: ' + label);
+}
+
+function addRootNode() {
+  var label = prompt('请输入根节点名称:', '新分组');
+  if (!label) return;
+  if (!S.tree.tabs) S.tree.tabs = [];
+  S.tree.tabs.push({ type: 'container', label: label, children: [] });
+  rebuildAndPreview();
+  renderTree();
+  showToast('已添加根节点: ' + label);
+}
+
+// ===== 节点编辑弹窗 =====
+var _nodeModalMode = 'add', _nodeModalPath = '', _editNodePath = '';
+
+function openAdd(parentPath) {
+  _nodeModalMode = 'add';
+  _nodeModalPath = parentPath;
+  document.getElementById('nodeModalTitle').textContent = '添加节点';
+  renderNodeModal({ type: 'field', label: '', value: '', visible: true });
+  document.getElementById('nodeEditModal').classList.add('show');
+}
+
+function editNode(path) {
+  _nodeModalMode = 'edit';
+  _editNodePath = path;
+  var node = resolveNode(path);
+  if (!node) { showToast('节点不存在', true); return; }
+  document.getElementById('nodeModalTitle').textContent = '编辑节点: ' + esc(node.label || '');
+  renderNodeModal(node);
+  document.getElementById('nodeEditModal').classList.add('show');
+}
+
+function renderNodeModal(node) {
+  var t = node.type || 'field';
+  var h = '';
+
+  // 类型选择
+  h += '<div class="form-group"><label>节点类型</label><select id="nmType" onchange="nmTypeChange()">';
+  var types = Object.keys(NODE_TYPES);
+  for (var i = 0; i < types.length; i++) {
+    h += '<option value="' + types[i] + '"' + (t === types[i] ? ' selected' : '') + '>' + NODE_TYPES[types[i]].name + '</option>';
+  }
+  h += '</select></div>';
+
+  // 标签名
+  h += '<div class="form-group"><label>标签名</label><input id="nmLabel" value="' + escAttr(node.label || '') + '"></div>';
+
+  // 描述
+  h += '<div class="form-group"><label>描述 (显示在右侧帮助区)</label><input id="nmDesc" value="' + escAttr(node.desc || '') + '"></div>';
+
+  // 值 (field/choice)
+  h += '<div class="form-group" id="nmValueRow" style="display:' + (t === 'field' || t === 'choice' ? 'block' : 'none') + '"><label>默认值</label><input id="nmValue" value="' + escAttr(node.value || '') + '"></div>';
+
+  // 选项列表 (choice)
+  h += '<div class="form-group" id="nmOptionsRow" style="display:' + (t === 'choice' ? 'block' : 'none') + '"><label>选项列表 (逗号分隔)</label><input id="nmOptions" value="' + escAttr((node.options || []).join(',')) + '"><div class="hint">例如：启用,关闭 或 自动,手动,关闭</div></div>';
+
+  // 跳转目标 (action)
+  h += '<div class="form-group" id="nmTargetRow" style="display:' + (t === 'action' ? 'block' : 'none') + '"><label>跳转目标 (可选，留空则无跳转)</label><input id="nmTarget" value="' + escAttr(node.target || '') + '"><div class="hint">例如：advanced/cpu 或留空</div></div>';
+
+  // Popup配置 (action)
+  h += '<div id="nmPopupSection" style="display:' + (t === 'action' ? 'block' : 'none') + '">';
+  h += '<div class="form-group"><label style="color:var(--ac2);font-weight:700">确认弹窗配置 (可选)</label></div>';
+  var pp = node.popup || {};
+  h += '<div class="form-group"><label>弹窗标题</label><input id="nmPopTitle" value="' + escAttr(pp.title || '') + '"></div>';
+  h += '<div class="form-group"><label>弹窗内容</label><textarea id="nmPopMsg">' + esc(pp.message || '') + '</textarea></div>';
+  h += '</div>';
+
+  document.getElementById('nodeModalBody').innerHTML = h;
+}
+
+function nmTypeChange() {
+  var t = document.getElementById('nmType').value;
+  document.getElementById('nmValueRow').style.display = (t === 'field' || t === 'choice') ? 'block' : 'none';
+  document.getElementById('nmOptionsRow').style.display = (t === 'choice') ? 'block' : 'none';
+  document.getElementById('nmTargetRow').style.display = (t === 'action') ? 'block' : 'none';
+  document.getElementById('nmPopupSection').style.display = (t === 'action') ? 'block' : 'none';
+}
+
+function submitNodeModal() {
+  var type = document.getElementById('nmType').value;
+  var label = document.getElementById('nmLabel').value.trim();
+  if (!label) { showToast('请输入标签名', true); return; }
+
+  var node = { type: type, label: label, visible: true };
+  var desc = document.getElementById('nmDesc').value.trim();
+  if (desc) node.desc = desc;
+
+  if (type === 'field' || type === 'choice') node.value = document.getElementById('nmValue').value;
+  if (type === 'choice') {
+    var opts = document.getElementById('nmOptions').value;
+    node.options = opts ? opts.split(',').map(function(s) { return s.trim(); }) : [];
+  }
+  if (type === 'tab' || type === 'container') node.children = [];
+  if (type === 'action') {
+    var target = document.getElementById('nmTarget').value.trim();
+    if (target) node.target = target;
+    var pt = document.getElementById('nmPopTitle').value.trim();
+    var pm = document.getElementById('nmPopMsg').value.trim();
+    if (pt || pm) node.popup = { title: pt, message: pm };
+  }
+
+  if (_nodeModalMode === 'add') {
+    var childrenArr = resolveNode(_nodeModalPath);
+    if (!childrenArr || !Array.isArray(childrenArr)) {
+      // 如果是添加到 tabs
+      if (_nodeModalPath === 'tabs' || _nodeModalPath.endsWith('.tabs')) {
+        if (!S.tree.tabs) S.tree.tabs = [];
+        S.tree.tabs.push(node);
+      } else {
+        showToast('父节点无效', true);
+        return;
+      }
+    } else {
+      childrenArr.push(node);
+    }
+    showToast('已添加: ' + label);
+    log('添加节点: ' + label + ' (类型: ' + type + ')');
+  } else {
+    var oldNode = resolveNode(_editNodePath);
+    if (!oldNode) { showToast('节点不存在', true); return; }
+    if (oldNode.children) node.children = oldNode.children;
+    node.visible = oldNode.visible;
+    var pinfo = resolveParentArray(_editNodePath);
+    if (pinfo) {
+      pinfo.arr[pinfo.idx] = node;
+    }
+    showToast('已更新: ' + label);
+    log('更新节点: ' + label);
+  }
+
+  closeNodeModal();
+  rebuildAndPreview();
+  renderTree();
+}
+
+function closeNodeModal() {
+  document.getElementById('nodeEditModal').classList.remove('show');
+}
+
+// ===== 拖拽排序 =====
+function dragStart(e, path) {
+  if (e.dataTransfer.types && e.dataTransfer.types.indexOf('Files') >= 0) return;
+  _dragSrcPath = path;
+  var el = document.querySelector('.node[data-path="' + escAttr(path) + '"]>.nr');
+  if (el) el.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function dragOver(e, path) {
+  e.preventDefault();
+  if (!_dragSrcPath || _dragSrcPath === path) return;
+  // 检查是否同级
+  var srcParent = _dragSrcPath.substring(0, _dragSrcPath.lastIndexOf('.'));
+  var dstParent = path.substring(0, path.lastIndexOf('.'));
+  if (srcParent !== dstParent) return;
+
+  var el = document.querySelector('.node[data-path="' + escAttr(path) + '"]>.nr');
+  if (!el) return;
+  el.classList.remove('drag-over-before', 'drag-over-after');
+  var rect = el.getBoundingClientRect();
+  if (e.clientY < rect.top + rect.height / 2) el.classList.add('drag-over-before');
+  else el.classList.add('drag-over-after');
+}
+
+function dragLeave(e) {
+  var el = e.target.closest('.nr');
+  if (el) el.classList.remove('drag-over-before', 'drag-over-after');
+}
+
+function dragDrop(e, path) {
+  e.preventDefault();
+  if (!_dragSrcPath || _dragSrcPath === path) { cleanupDrag(); return; }
+
+  var srcInfo = resolveParentArray(_dragSrcPath);
+  var dstInfo = resolveParentArray(path);
+  if (!srcInfo || !dstInfo || srcInfo.arr !== dstInfo.arr) {
+    cleanupDrag();
+    showToast('仅支持同级拖拽排序', true);
+    return;
+  }
+
+  var node = srcInfo.arr.splice(srcInfo.idx, 1)[0];
+  var newIdx = dstInfo.idx;
+  if (srcInfo.idx < dstInfo.idx) newIdx--;
+  var el = document.querySelector('.node[data-path="' + escAttr(path) + '"]>.nr');
+  if (el && el.classList.contains('drag-over-after')) newIdx++;
+  dstInfo.arr.splice(Math.min(newIdx, dstInfo.arr.length), 0, node);
+
+  rebuildAndPreview();
+  renderTree();
+  cleanupDrag();
+  log('拖拽排序: ' + (node.label || ''));
+}
+
+function dragEnd(e) { cleanupDrag(); }
+
+function cleanupDrag() {
+  _dragSrcPath = null;
+  document.querySelectorAll('.nr.dragging,.nr.drag-over-before,.nr.drag-over-after').forEach(function(el) {
+    el.classList.remove('dragging', 'drag-over-before', 'drag-over-after');
+  });
+}
+
+// ===== CSV 导出/导入 =====
+function exportCSV() {
+  if (!S.tree) { showToast('没有可导出的数据', true); return; }
+  var rows = buildCSVRows();
+  var csv = rows.map(function(row) {
+    return row.map(function(cell) { return csvEscape(cell); }).join(',');
+  }).join('\n');
+  var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (S.fileName || '昆仑BIOS') + '.csv';
+  a.click();
+  showToast('已导出CSV');
+  log('导出CSV，共 ' + (rows.length - 1) + ' 行数据');
+}
+
+function csvEscape(val) {
+  if (val === null || val === undefined) return '';
+  var s = String(val);
+  if (s.indexOf(',') >= 0 || s.indexOf('"') >= 0 || s.indexOf('\n') >= 0) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+function buildCSVRows() {
+  var rows = [];
+  rows.push(['路径', '类型', '标签', '值', '选项', '描述', '可见', '跳转目标', '弹窗标题', '弹窗内容']);
+
+  function walk(node, path, depth) {
+    if (!node) return;
+    var row = [
+      path,
+      node.type || 'field',
+      node.label || '',
+      node.value || '',
+      (node.options || []).join('|'),
+      node.desc || '',
+      node.visible === false ? '否' : '是',
+      node.target || '',
+      (node.popup && node.popup.title) || '',
+      (node.popup && node.popup.message) || ''
+    ];
+    rows.push(row);
+
+    if (node.children) {
+      for (var i = 0; i < node.children.length; i++) {
+        walk(node.children[i], path + '.children.' + i, depth + 1);
+      }
+    }
+  }
+
+  if (S.tree.tabs) {
+    for (var i = 0; i < S.tree.tabs.length; i++) {
+      walk(S.tree.tabs[i], 'tabs.' + i, 0);
+    }
+  }
+
+  return rows;
+}
+
+function importCSV() {
+  var inp = document.createElement('input');
+  inp.type = 'file';
+  inp.accept = '.csv';
+  inp.onchange = function() {
+    var f = inp.files[0];
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function() {
+      try {
+        parseCSV(r.result);
+        rebuildAndPreview();
+        renderTree();
+        showToast('已导入CSV');
+        log('CSV导入完成');
+      } catch (e) {
+        showToast('导入失败: ' + e.message, true);
+      }
+    };
+    r.readAsText(f);
+  };
+  inp.click();
+}
+
+function parseCSV(text) {
+  var lines = text.split('\n').filter(function(l) { return l.trim(); });
+  if (lines.length < 2) return;
+
+  // 解析表头
+  var header = parseCSVLine(lines[0]);
+
+  // 清空现有数据
+  S.tree = { tabs: [] };
+
+  // 解析数据行
+  for (var i = 1; i < lines.length; i++) {
+    var cells = parseCSVLine(lines[i]);
+    if (cells.length < 3) continue;
+
+    var path = cells[0];
+    var type = cells[1] || 'field';
+    var label = cells[2] || '';
+    var value = cells[3] || '';
+    var options = (cells[4] || '').split('|').filter(function(s) { return s; });
+    var desc = cells[5] || '';
+    var visible = cells[6] !== '否';
+    var target = cells[7] || '';
+    var popTitle = cells[8] || '';
+    var popMsg = cells[9] || '';
+
+    var node = { type: type, label: label, visible: visible };
+    if (value) node.value = value;
+    if (options.length > 0) node.options = options;
+    if (desc) node.desc = desc;
+    if (target) node.target = target;
+    if (popTitle || popMsg) node.popup = { title: popTitle, message: popMsg };
+    if (type === 'tab' || type === 'container') node.children = [];
+
+    // 根据路径插入节点
+    insertNodeByPath(path, node);
+  }
+}
+
+function insertNodeByPath(path, node) {
+  var parts = path.split('.');
+  if (parts[0] === 'tabs' && parts.length === 2) {
+    // 顶层tab
+    var idx = parseInt(parts[1]);
+    while (S.tree.tabs.length <= idx) S.tree.tabs.push(null);
+    S.tree.tabs[idx] = node;
+  } else {
+    // 子节点 - 找到父节点并添加
+    var parentPath = parts.slice(0, -2).join('.'); // 去掉 .children.N
+    var parent = resolveNode(parentPath);
+    if (parent && parent.children) {
+      parent.children.push(node);
+    }
+  }
+}
+
+function parseCSVLine(line) {
+  var cells = [];
+  var cell = '';
+  var inQuotes = false;
+  for (var i = 0; i < line.length; i++) {
+    var c = line[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (line[i + 1] === '"') { cell += '"'; i++; }
+        else inQuotes = false;
+      } else cell += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { cells.push(cell); cell = ''; }
+      else cell += c;
+    }
+  }
+  cells.push(cell);
+  return cells;
+}
+
+// ===== 预览配置视图 =====
+function renderPreviewConfig() {
+  var h = '<div style="padding:12px;font-size:13px;color:var(--ac2);font-weight:700;border-bottom:1px solid var(--bd);margin-bottom:12px">预览配置</div>';
+  h += '<div style="padding:0 12px">';
+  h += '<p style="font-size:12px;color:var(--tx2);margin-bottom:16px">右侧预览面板实时显示昆仑BIOS界面。编辑左侧树结构后，预览会自动更新。</p>';
+  h += '<button class="btn g" onclick="rebuildAndPreview()" style="width:100%;padding:10px;font-size:13px">刷新预览</button>';
+  h += '<div style="margin-top:20px;padding:12px;background:var(--bg3);border-radius:6px">';
+  h += '<div style="font-size:11px;color:var(--tx2);margin-bottom:8px">统计信息</div>';
+  h += '<div style="font-size:12px;color:var(--tx)">Tab数量: ' + (S.tree.tabs ? S.tree.tabs.length : 0) + '</div>';
+  h += '<div style="font-size:12px;color:var(--tx)">总节点数: ' + countNodes(S.tree) + '</div>';
+  h += '</div>';
+  h += '</div>';
+  document.getElementById('treeContent').innerHTML = h;
+}
+
+function countNodes(tree) {
+  var count = 0;
+  function walk(node) {
+    if (!node) return;
+    count++;
+    if (node.children) {
+      for (var i = 0; i < node.children.length; i++) walk(node.children[i]);
+    }
+  }
+  if (tree.tabs) {
+    for (var i = 0; i < tree.tabs.length; i++) walk(tree.tabs[i]);
+  }
+  return count;
+}
+
+// ===== 日志 =====
+function log(msg, color) {
+  color = color || '#8a8';
+  var t = new Date().toLocaleTimeString();
+  _logLines.push('<span style="color:#888">[' + t + ']</span> <span style="color:' + color + '">' + esc(String(msg)) + '</span>');
+  if (_logLines.length > 100) _logLines.shift();
+}
+
+function renderLogView() {
+  var h = '<div style="padding:12px;font-size:13px;color:var(--ac2);font-weight:700;border-bottom:1px solid var(--bd);margin-bottom:12px">调试日志</div>';
+  h += '<div style="padding:0 12px">';
+  h += '<button onclick="_logLines=[];renderLogView()" style="margin-bottom:10px;padding:5px 14px;background:var(--bg);border:1px solid var(--bd);color:var(--tx);cursor:pointer;font-size:12px;border-radius:4px">清空日志</button>';
+  h += '<div id="logInline" style="font-family:Consolas,monospace;font-size:11px;color:#8a8;white-space:pre-wrap;word-break:break-all;line-height:1.8;max-height:500px;overflow-y:auto">';
+  if (_logLines.length === 0) h += '<span style="color:#888">等待操作...</span>';
+  else h += _logLines.join('<br>');
+  h += '</div></div>';
+  document.getElementById('treeContent').innerHTML = h;
+}
+
+// ===== 工具函数 =====
+function showToast(msg, isErr) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('on');
+  if (isErr) t.classList.add('err');
+  setTimeout(function() { t.classList.remove('on', 'err'); }, 2500);
+}
+
+function esc(s) {
+  return s == null ? '' : String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function escAttr(s) {
+  return s == null ? '' : String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// ===== 快捷键 =====
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') { e.preventDefault(); saveFile(); }
+  if ((e.ctrlKey || e.metaKey) && e.key === 'o') { e.preventDefault(); openFile(); }
+});
+
+// ===== 拖拽文件 =====
+document.addEventListener('dragover', function(e) { e.preventDefault(); });
+document.addEventListener('drop', function(e) {
+  e.preventDefault();
+  var f = e.dataTransfer.files[0];
+  if (!f) return;
+  if (f.name.endsWith('.html')) {
+    var r = new FileReader();
+    r.onload = function() {
+      loadHTML(r.result, f.name, null);
+      document.getElementById('chooseOverlay').style.display = 'none';
+      document.getElementById('appMain').style.display = 'flex';
+    };
+    r.readAsText(f);
+  } else if (f.name.endsWith('.csv')) {
+    var r = new FileReader();
+    r.onload = function() {
+      parseCSV(r.result);
+      rebuildAndPreview();
+      renderTree();
+      showToast('已导入CSV');
+      document.getElementById('chooseOverlay').style.display = 'none';
+      document.getElementById('appMain').style.display = 'flex';
+      document.getElementById('emptyHint').style.display = 'none';
+    };
+    r.readAsText(f);
+  } else {
+    showToast('仅支持 .html 或 .csv 文件', true);
+  }
+});
+
+// ===== 昆仑BIOS CSS =====
+var KUNLUN_CSS = '*{margin:0;padding:0;box-sizing:border-box}html{font-size:16px}@media(min-width:768px){html{font-size:18px}}@media(min-width:1024px){html{font-size:20px}}html,body{height:100%;width:100%;overflow:hidden;font-family:"SimSun","Songti SC","STSong","宋体",serif;background:#000;line-height:0.85}.header-title,.footer-text{font-size:1.2rem}#bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.1}.container{height:100vh;width:100vw;display:flex;flex-direction:column;position:relative;z-index:1}.section1{height:7%;min-height:40px;background-color:#3f80c1;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}.section1 .header-box{position:absolute;top:8%;left:0;right:0;bottom:8%;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,0.6)}.header-title{color:#fff;font-weight:700}.nav-wrapper{height:4%;min-height:32px;width:100%;display:flex;background-color:#3f80c1;flex-shrink:0}.nav-wrapper .section2{display:flex;align-items:stretch;height:100%;gap:1em;padding-left:1em}.nav-wrapper .section2 .btn-wrap{flex:1;height:100%;display:flex}.nav-wrapper .section2 button{flex:1;height:100%;border:none;background-color:#3f80c1;color:#fff;font-size:1rem;cursor:pointer;border-radius:0;margin:0;font-family:inherit;transition:all .15s;padding:0 1.2em;white-space:nowrap;display:flex;align-items:center;justify-content:center}.nav-wrapper .section2 button:hover{background-color:#5090d8}.nav-wrapper .section2 button.active{background-color:#ebeaea;color:#0000d1;font-weight:700}.nav-fill{flex:1;height:100%;background-color:#3f80c1}.section2.sub-page .btn-wrap button:not(.active){color:transparent}.middle-section{flex:1 1 0;min-height:0;display:flex;background-color:#f0f0f0}.left-section{flex:1;height:100%;background-color:#ebeaea;padding:1rem 1.25rem;overflow-y:auto;border-right:2px solid #3f80c1;position:relative;min-width:0}.right-section{width:28%;min-width:160px;display:flex;flex-direction:column}.right-top{flex:1 1 0;overflow-y:auto;overflow-x:hidden;padding:0.75rem;padding-left:4.4em;min-height:0;background-color:#ebeaea;display:flex;align-items:flex-start;justify-content:flex-start}.right-bottom{flex:1 1 0;background-color:#ebeaea;border-top:2px solid #3f80c1;padding:0.25rem;overflow-y:auto}.help-table{width:100%;border-collapse:collapse;color:#0000d1;font-family:inherit;font-size:1rem}.help-table td{padding:0.2em 0.4em}.help-table td:nth-child(1){width:12%;white-space:nowrap;font-weight:700}.help-table td:nth-child(2){width:4%}.help-table td:nth-child(3){width:84%}.section3{height:7%;min-height:40px;background-color:#3f80c1;position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}.section3 .footer-box{position:absolute;top:8%;left:0;right:0;bottom:8%;display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,0.6)}.footer-text{color:#fff}.content-table{width:100%;border-collapse:collapse;font-size:1rem;color:#000}.content-table tr{cursor:default}.content-table td{padding:0.3em 1.5em}.content-table td:first-child{width:50%}.content-table td:last-child{width:50%;font-weight:700}.content-table .section-header{color:#3f80c1;font-weight:normal;font-size:1rem;padding-top:1.5em}.content-table .nav-link{color:#0000d1;cursor:pointer}.content-table .nav-link:hover{text-decoration:underline}select{border:1px solid #3f80c1;padding:0.1em 0.4em;font-size:1rem;font-family:inherit;color:#0000d1}input{border:1px solid #3f80c1;padding:0.1em 0.4em;font-size:1rem;font-family:inherit}.content-table tr.kb-sel td{color:#fff!important}.content-table tr.kb-sel td .kb-text{background:#000!important;display:inline}.content-table tr.kb-sel td .nav-link{color:#fff!important}.content-table tr.kb-sel td select{color:#fff!important;background:#333!important;border-color:#fff!important}.content-table tr.hover-sel td{color:#fff!important}.content-table tr.hover-sel td .kb-text{background:#000!important;display:inline}.left-section::-webkit-scrollbar{width:8px}.left-section::-webkit-scrollbar-track{background:#d0d0d0}.left-section::-webkit-scrollbar-thumb{background:#3f80c1;border-radius:4px}#toast{position:fixed;top:12%;right:1rem;padding:0.5rem 1rem;border-radius:0.25rem;font-size:1rem;font-weight:600;z-index:200;opacity:0;transform:translateX(100%);transition:all .3s ease;pointer-events:none;background:#52bad1;color:#fff}#toast.show{opacity:1;transform:translateX(0)}';
+
+// ===== 昆仑BIOS JS =====
+var KUNLUN_JS = 'function showToast(m){var e=document.getElementById("toast");e.textContent=m;e.classList.add("show");clearTimeout(window._tt);window._tt=setTimeout(function(){e.classList.remove("show");},2200);}function showPopup(p){if(p&&p.title)showToast(p.title+": "+p.message);}function navigate(path){var route=ROUTES[path]||ROUTES[Object.keys(ROUTES)[0]];if(!route)return;document.getElementById("leftContent").innerHTML=route.content;document.getElementById("functionDesc").textContent=route.desc||"";document.querySelectorAll(".section2 button").forEach(function(b){b.classList.remove("active");});var btn=document.getElementById("btn"+route.tab);if(btn)btn.classList.add("active");var nav=document.getElementById("navBar");nav.classList.toggle("sub-page",!!route.isSub);}function navigateToTab(tabId){var idx=TAB_IDS.indexOf(tabId);if(idx>=0)navigate(tabId);}function initKunlun(){var canvas=document.getElementById("bgCanvas"),ctx=canvas.getContext("2d");var W,H,nodes=[];function rs(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight;}rs();window.addEventListener("resize",rs);for(var i=0;i<60;i++)nodes.push({x:Math.random()*W,y:Math.random()*H,r:.5+Math.random()*1.5,s:(.3+Math.random()*.7)*(Math.random()>.5?1:-1)});function draw(){ctx.clearRect(0,0,W,H);nodes.forEach(function(n){n.y+=n.s;if(n.y>H+5)n.y=-5;if(n.y<-5)n.y=H+5;ctx.beginPath();ctx.arc(n.x,n.y,n.r,0,Math.PI*2);ctx.fillStyle="#3f80c1";ctx.globalAlpha=.08;ctx.fill();});ctx.globalAlpha=1;requestAnimationFrame(draw);}draw();navigate(Object.keys(ROUTES)[0]);}';
+
+console.log('昆仑 BIOS 编辑器 — 准备就绪');
+</script>
+</body>
+</html>
