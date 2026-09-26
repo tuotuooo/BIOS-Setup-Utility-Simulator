@@ -235,7 +235,7 @@
     color:var(--arrow-color);
     margin-right:4px;
   }
-  /* 子菜单箭头 */
+  /* 子菜单箭头：纯视觉指示，不参与交互 */
   .submenu-arrow {
     color:var(--submenu-text);
     font-weight:bold;
@@ -243,10 +243,7 @@
     display:inline-block;
     min-width:20px;
     text-align:left;
-  }
-  /* 箭头纯视觉指示，不参与交互 */
-  .submenu-arrow {
-    pointer-events: none;
+    pointer-events:none;
   }
   /* 弹出式选择器：蓝底白字 + 白色内边框 + 交互态青蓝底 */
   .inline-picker {
@@ -1301,7 +1298,7 @@ function activateFocusedRow() {
     }
   } else if (item.type === 'submenu') {
     if (item.target) {
-      historyStack.push(currentTab);
+      historyStack.push(currentRenderedPage);
       renderPage(item.target);
     }
   } else if (item.type === 'action') {
@@ -1398,21 +1395,26 @@ function renderPage(pageName) {
 
     const val = document.createElement('span');
 
-    // 鼠标交互：悬停时显示焦点，离开后取消（实机风格）
-    row.addEventListener('mouseenter', () => {
-      const allRows = document.querySelectorAll('#infoBody .info-row');
-      allRows.forEach((r, i) => {
-        r.classList.toggle('focused', r === row);
+    // 鼠标交互：仅非readonly行绑定（readonly行pointer-events:none，绑定也不会触发）
+    if (item.type !== 'text') {
+      row.addEventListener('mouseenter', () => {
+        const allRows = document.querySelectorAll('#infoBody .info-row');
+        allRows.forEach((r, i) => {
+          r.classList.toggle('focused', r === row);
+          if (r === row) focusedRowIdx = i;  // 使用DOM索引而非data索引
+        });
+        updateHelpOnFocus();
       });
-      focusedRowIdx = idx;
-      updateHelpOnFocus();
-    });
-    row.addEventListener('mouseleave', () => {
-      row.classList.remove('focused');
-      if (focusedRowIdx === idx) {
-        focusedRowIdx = -1;
-      }
-    });
+      row.addEventListener('mouseleave', () => {
+        row.classList.remove('focused');
+        const allRows = document.querySelectorAll('#infoBody .info-row');
+        let domIdx = -1;
+        allRows.forEach((r, i) => { if (r === row) domIdx = i; });
+        if (focusedRowIdx === domIdx) {
+          focusedRowIdx = -1;
+        }
+      });
+    }
 
     if (item.type === 'choice') {
       row.classList.add('is-choice');
@@ -1761,7 +1763,7 @@ function bindKeyboard() {
 // 根据当前焦点行更新帮助信息
 function updateHelpOnFocus() {
   const item = getFocusedItem();
-  if (item && item.help) {
+  if (item && item.help !== undefined) {
     document.getElementById('helpText').textContent = item.help;
   }
 }
