@@ -254,8 +254,9 @@
     padding:5px;                          /* 选择框与白色边框间距5px */
     display:flex;
     flex-direction:column;
-    background:var(--popup-border);        /* 蓝色背景 */
-    border:1px solid #ffffff;             /* 白色内边框 */
+    background:var(--popup-border);       /* 蓝色背景 */
+    outline:1px solid #ffffff;            /* 白色边框 */
+    outline-offset:-5px;                  /* 向内偏移5px = 内收5px */
     z-index:200;
     font-size:13px;
     min-width:80px;
@@ -270,11 +271,11 @@
     text-align:left;
   }
   .inline-option:hover {
-    background:#0080ff;                   /* 交互态：偏蓝青蓝底 */
+    background:#00a0c0;                  /* 交互态：偏青蓝底 */
     color:#ffffff;
   }
   .inline-option.selected {
-    background:#0080ff;                   /* 选中态：偏蓝青蓝底 */
+    background:#00a0c0;                  /* 选中态：偏青蓝底 */
     color:#ffffff;
     font-weight:bold;
   }
