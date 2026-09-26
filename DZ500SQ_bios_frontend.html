@@ -236,14 +236,11 @@
     margin-right:4px;
   }
   /* 禁用行（disabledWhen条件不满足）：灰色不可选 */
+  /* 禁用行（disabledWhen条件不满足）：低透明度灰色效果 */
   .info-row.disabled {
     cursor: not-allowed;
     pointer-events: none;
     opacity: 0.5;
-  }
-  .info-row.disabled .info-label,
-  .info-row.disabled .info-value {
-    color: #888888;
   }
   /* 禁用行无焦点视觉反馈 */
   .info-row.disabled.focused {
