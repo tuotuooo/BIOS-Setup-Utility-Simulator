@@ -235,8 +235,21 @@
     color:var(--arrow-color);
     margin-right:4px;
   }
-  /* 子菜单箭头：纯视觉指示，不参与交互 */
-  .submenu-arrow {
+  /* 禁用行（disabledWhen条件不满足）：灰色不可选 */
+  .info-row.disabled {
+    cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+  .info-row.disabled .info-label,
+  .info-row.disabled .info-value {
+    color: #888888;
+  }
+  /* 禁用行无焦点视觉反馈 */
+  .info-row.disabled.focused {
+    background: transparent;
+    outline: none;
+  }
     color:var(--submenu-text);
     font-weight:bold;
     cursor:pointer;
@@ -571,8 +584,8 @@ const subPages = {
     help: '配置显卡和显示设置。',
     items: [
       { type:'choice', label:'多显', value:'<关闭>', options:['<关闭>','<打开>'], help:'多显打开或关闭。' },
-      { type:'choice', label:'优先显示控制器', value:'<外插显卡>', options:['<外插显卡>','<板载显卡>'], help:'选择优先使用哪个设备做视频输出' },
-      { type:'choice', label:'UMA', value:'<打开>', options:['<关闭>','<打开>'], help:'启用或禁用UMA。' },
+      { type:'choice', label:'优先显示控制器', value:'<外插显卡>', options:['<外插显卡>','<板载显卡>'], key:'primary_display', help:'选择优先使用哪个设备做视频输出' },
+      { type:'choice', label:'UMA', value:'<打开>', options:['<关闭>','<打开>'], disabledWhen:{primary_display:'<板载显卡>'}, help:'启用或禁用UMA。' },
       { type:'choice', label:'板载显卡性能', value:'<正常>', options:['<正常>','<高性能>'], help:'设置板载显卡性能模式。' }
     ]
   },
@@ -1410,7 +1423,18 @@ function renderPage(pageName) {
     }
 
     const row = document.createElement('div');
-    row.className = 'info-row' + (item.type === 'text' ? ' readonly' : '');
+    // 检查disabledWhen条件
+    let isDisabled = false;
+    if (item.disabledWhen) {
+      const cond = item.disabledWhen;
+      for (const [key, val] of Object.entries(cond)) {
+        if (pageValues[key] === val) {
+          isDisabled = true;
+          break;
+        }
+      }
+    }
+    row.className = 'info-row' + (item.type === 'text' ? ' readonly' : '') + (isDisabled ? ' disabled' : '');
     row.dataset.idx = idx;
     row.dataset.type = item.type; // 标记行类型
 
@@ -1421,8 +1445,8 @@ function renderPage(pageName) {
 
     const val = document.createElement('span');
 
-    // 鼠标交互：仅非readonly行绑定（readonly行pointer-events:none，绑定也不会触发）
-    if (item.type !== 'text') {
+    // 鼠标交互：仅非readonly且非disabled行绑定
+    if (item.type !== 'text' && !isDisabled) {
       row.addEventListener('mouseenter', () => {
         const allRows = document.querySelectorAll('#infoBody .info-row');
         allRows.forEach((r, i) => {
@@ -1724,7 +1748,7 @@ function bindKeyboard() {
       if (focusedRowIdx === -1) {
         // 从没有焦点开始：跳到最后一个可交互行
         for (let i = rows.length - 1; i >= 0; i--) {
-          if (!rows[i].classList.contains('readonly')) {
+          if (!rows[i].classList.contains('readonly') && !rows[i].classList.contains('disabled')) {
             focusedRowIdx = i;
             focusRow(i);
             break;
@@ -1732,12 +1756,12 @@ function bindKeyboard() {
         }
       } else if (focusedRowIdx > 0) {
         focusedRowIdx--;
-        // 如果跳到只读行，继续向上找可交互行
-        while (focusedRowIdx > 0 && rows[focusedRowIdx] && rows[focusedRowIdx].classList.contains('readonly')) {
+        // 如果跳到只读行或禁用行，继续向上找可交互行
+        while (focusedRowIdx > 0 && rows[focusedRowIdx] && (rows[focusedRowIdx].classList.contains('readonly') || rows[focusedRowIdx].classList.contains('disabled'))) {
           focusedRowIdx--;
         }
-        // 如果最终停在只读行，跳过
-        if (rows[focusedRowIdx] && !rows[focusedRowIdx].classList.contains('readonly')) {
+        // 如果最终停在只读行或禁用行，跳过
+        if (rows[focusedRowIdx] && !rows[focusedRowIdx].classList.contains('readonly') && !rows[focusedRowIdx].classList.contains('disabled')) {
           focusRow(focusedRowIdx);
         }
       }
@@ -1747,7 +1771,7 @@ function bindKeyboard() {
       if (focusedRowIdx === -1) {
         // 从没有焦点开始：跳到第一个可交互行
         for (let i = 0; i < rows.length; i++) {
-          if (!rows[i].classList.contains('readonly')) {
+          if (!rows[i].classList.contains('readonly') && !rows[i].classList.contains('disabled')) {
             focusedRowIdx = i;
             focusRow(i);
             break;
@@ -1755,12 +1779,12 @@ function bindKeyboard() {
         }
       } else if (focusedRowIdx < rows.length - 1) {
         focusedRowIdx++;
-        // 如果跳到只读行，继续向下找可交互行
-        while (focusedRowIdx < rows.length - 1 && rows[focusedRowIdx] && rows[focusedRowIdx].classList.contains('readonly')) {
+        // 如果跳到只读行或禁用行，继续向下找可交互行
+        while (focusedRowIdx < rows.length - 1 && rows[focusedRowIdx] && (rows[focusedRowIdx].classList.contains('readonly') || rows[focusedRowIdx].classList.contains('disabled'))) {
           focusedRowIdx++;
         }
-        // 如果最终停在只读行，跳过
-        if (rows[focusedRowIdx] && !rows[focusedRowIdx].classList.contains('readonly')) {
+        // 如果最终停在只读行或禁用行，跳过
+        if (rows[focusedRowIdx] && !rows[focusedRowIdx].classList.contains('readonly') && !rows[focusedRowIdx].classList.contains('disabled')) {
           focusRow(focusedRowIdx);
         }
       }
