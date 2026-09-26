@@ -426,7 +426,7 @@ const biosData = {
     label: '设备',
     help: '配置和管理系统硬件设备。',
     items: [
-      { type:'submenu', label:'SATA配置', target:'sata_config', help:'配置SATA控制器和设备。' },
+      { type:'submenu', label:'SATA配置', target:'sata_config', help:'SATA配置' },
       { type:'submenu', label:'显示配置', target:'display_config', help:'配置显卡和显示设置。' },
       { type:'submenu', label:'声卡配置', target:'audio_config', help:'配置板载声卡设置。' },
       { type:'submenu', label:'板载网卡配置', target:'nic_config', help:'配置板载网卡设置。' },
@@ -555,7 +555,7 @@ const subPages = {
   },
   sata_config: {
     title: 'SATA配置',
-    help: '配置SATA控制器和设备。',
+    help: 'SATA配置',
     items: [
       { type:'text', label:'SATA 1', value:'未检测到' },
       { type:'text', label:'SATA 2', value:'未检测到' },
