@@ -1454,7 +1454,7 @@ function renderPage(pageName) {
       });
     }
 
-    if (item.type === 'choice') {
+    if (item.type === 'choice' && !isDisabled) {
       row.classList.add('is-choice');
       val.className = 'info-value editable choice-value';
       val.textContent = item.value;
