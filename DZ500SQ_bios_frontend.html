@@ -236,17 +236,6 @@
     margin-right:4px;
   }
   /* 禁用行（disabledWhen条件不满足）：灰色不可选 */
-  /* 禁用行（disabledWhen条件不满足）：低透明度灰色效果 */
-  .info-row.disabled {
-    cursor: not-allowed;
-    pointer-events: none;
-    opacity: 0.5;
-  }
-  /* 禁用行无焦点视觉反馈 */
-  .info-row.disabled.focused {
-    background: transparent;
-    outline: none;
-  }
   /* 子菜单箭头：纯视觉指示，不参与交互 */
   .submenu-arrow {
     color:var(--submenu-text);
@@ -1433,7 +1422,7 @@ function renderPage(pageName) {
         }
       }
     }
-    row.className = 'info-row' + (item.type === 'text' ? ' readonly' : '') + (isDisabled ? ' disabled' : '');
+    row.className = 'info-row' + (item.type === 'text' || isDisabled ? ' readonly' : '');
     row.dataset.idx = idx;
     row.dataset.type = item.type; // 标记行类型
 
@@ -1750,7 +1739,7 @@ function bindKeyboard() {
       if (focusedRowIdx === -1) {
         // 从没有焦点开始：跳到最后一个可交互行
         for (let i = rows.length - 1; i >= 0; i--) {
-          if (!rows[i].classList.contains('readonly') && !rows[i].classList.contains('disabled')) {
+          if (!rows[i].classList.contains('readonly')) {
             focusedRowIdx = i;
             focusRow(i);
             break;
@@ -1759,11 +1748,11 @@ function bindKeyboard() {
       } else if (focusedRowIdx > 0) {
         focusedRowIdx--;
         // 如果跳到只读行或禁用行，继续向上找可交互行
-        while (focusedRowIdx > 0 && rows[focusedRowIdx] && (rows[focusedRowIdx].classList.contains('readonly') || rows[focusedRowIdx].classList.contains('disabled'))) {
+        while (focusedRowIdx > 0 && rows[focusedRowIdx] && rows[focusedRowIdx].classList.contains('readonly')) {
           focusedRowIdx--;
         }
         // 如果最终停在只读行或禁用行，跳过
-        if (rows[focusedRowIdx] && !rows[focusedRowIdx].classList.contains('readonly') && !rows[focusedRowIdx].classList.contains('disabled')) {
+        if (rows[focusedRowIdx] && !rows[focusedRowIdx].classList.contains('readonly')) {
           focusRow(focusedRowIdx);
         }
       }
@@ -1773,7 +1762,7 @@ function bindKeyboard() {
       if (focusedRowIdx === -1) {
         // 从没有焦点开始：跳到第一个可交互行
         for (let i = 0; i < rows.length; i++) {
-          if (!rows[i].classList.contains('readonly') && !rows[i].classList.contains('disabled')) {
+          if (!rows[i].classList.contains('readonly')) {
             focusedRowIdx = i;
             focusRow(i);
             break;
@@ -1786,7 +1775,7 @@ function bindKeyboard() {
           focusedRowIdx++;
         }
         // 如果最终停在只读行或禁用行，跳过
-        if (rows[focusedRowIdx] && !rows[focusedRowIdx].classList.contains('readonly') && !rows[focusedRowIdx].classList.contains('disabled')) {
+        if (rows[focusedRowIdx] && !rows[focusedRowIdx].classList.contains('readonly')) {
           focusRow(focusedRowIdx);
         }
       }
