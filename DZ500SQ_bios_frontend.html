@@ -310,11 +310,6 @@
     color:var(--help-text);
     overflow-y:auto;
   }
-  .help-item-title {
-    font-weight:bold;
-    color:var(--submenu-text);
-    margin-bottom:4px;
-  }
   /* ── 底部栏 ── */
   .bottom-bar {
     background:var(--footer-bg);
@@ -381,7 +376,6 @@
     <div class="help-panel">
       <div class="help-header">帮助信息</div>
       <div class="help-body" id="helpBody">
-        <div class="help-item-title" id="helpTitle">主页</div>
         <div id="helpText">显示系统基本信息和可配置选项。</div>
       </div>
     </div>
@@ -1358,7 +1352,6 @@ function renderPage(pageName) {
 
   const body = document.getElementById('infoBody');
   const header = document.getElementById('infoHeader');
-  const helpTitle = document.getElementById('helpTitle');
   const helpText = document.getElementById('helpText');
 
   // 子页面显示标题，一级页面隐藏标题
@@ -1370,7 +1363,6 @@ function renderPage(pageName) {
     header.textContent = '';
   }
 
-  helpTitle.textContent = data.title || data.label || pageName;
   helpText.textContent = data.help || '暂无帮助信息。';
 
   body.innerHTML = '';
@@ -1652,7 +1644,6 @@ function doSearch() {
   body.innerHTML = '';
   header.style.display = '';
   header.textContent = '搜索结果';
-  document.getElementById('helpTitle').textContent = '搜索结果';
   helpText.textContent = `找到 ${results.length} 个匹配项。`;
 
   body.innerHTML = `<div style="padding:8px;font-weight:bold;color:var(--label-text);">关键词 "${keyword}"：${results.length} 个结果</div>`;
