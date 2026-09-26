@@ -130,7 +130,7 @@
   /* 信息行 */
   .info-row {
     display:flex;
-    padding:3px 0;
+    padding:1px 0;
     font-size:13px;
     min-height:18px;
     align-items:center;
@@ -559,6 +559,7 @@ const subPages = {
     items: [
       { type:'text', label:'SATA 1', value:'未检测到' },
       { type:'text', label:'SATA 2', value:'未检测到' },
+      { type:'spacer' },
       { type:'choice', label:'SATA 控制器', value:'<打开>', options:['<关闭>','<打开>'], help:'选择是否支持SATA设备。' },
       { type:'choice', label:'配置SATA为', value:'<AHCI>', options:['<IDE>','<AHCI>'], help:'选择IDE或AHCI模式。注意：设备驱动支持AHCI模式取决于硬盘如何安装。改变这个设定可能引起无法从系统启动。' },
       { type:'choice', label:'SATA速度设置', value:'<Gen3>', options:['<Gen1>','<Gen2>','<Gen3>'], help:'设置SATA传输速度。' },
