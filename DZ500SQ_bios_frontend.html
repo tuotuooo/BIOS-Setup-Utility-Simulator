@@ -560,10 +560,10 @@ const subPages = {
       { type:'text', label:'SATA 1', value:'未检测到' },
       { type:'text', label:'SATA 2', value:'未检测到' },
       { type:'spacer' },
-      { type:'choice', label:'SATA 控制器', value:'<打开>', options:['<关闭>','<打开>'], help:'选择是否支持SATA设备。' },
-      { type:'choice', label:'配置SATA为', value:'<AHCI>', options:['<IDE>','<AHCI>'], help:'选择IDE或AHCI模式。注意：设备驱动支持AHCI模式取决于硬盘如何安装。改变这个设定可能引起无法从系统启动。' },
-      { type:'choice', label:'SATA速度设置', value:'<Gen3>', options:['<Gen1>','<Gen2>','<Gen3>'], help:'设置SATA传输速度。' },
-      { type:'choice', label:'AHCI热插拔功能', value:'<关闭>', options:['<关闭>','<打开>'], help:'启用或禁用AHCI热插拔功能。' }
+      { type:'choice', label:'SATA 控制器', value:'打开', options:['关闭','打开'], key:'sata_controller', help:'选择是否支持SATA设备。' },
+      { type:'choice', label:'配置SATA为', value:'AHCI', options:['IDE','AHCI'], visibleWhen:{sata_controller:'打开'}, help:'选择IDE或AHCI模式。注意：设备驱动支持AHCI模式取决于硬盘如何安装。改变这个设定可能引起无法从系统启动。' },
+      { type:'choice', label:'SATA速度设置', value:'Gen3', options:['Gen1','Gen2','Gen3'], visibleWhen:{sata_controller:'打开'}, help:'设置SATA传输速度。' },
+      { type:'choice', label:'AHCI热插拔功能', value:'关闭', options:['关闭','打开'], visibleWhen:{sata_controller:'打开'}, help:'启用或禁用AHCI热插拔功能。' }
     ]
   },
   display_config: {
@@ -1335,6 +1335,11 @@ function cycleChoiceValue(delta) {
   const row = rows[focusedRowIdx];
   const valEl = row.querySelector('.info-value');
   if (valEl) valEl.textContent = newVal;
+
+  // 若此choice有key，重新渲染以应用条件显示
+  if (item.key && currentRenderedPage) {
+    renderPage(currentRenderedPage);
+  }
 }
 
 // ==================== 渲染页面 ====================
@@ -1369,8 +1374,28 @@ function renderPage(pageName) {
 
   if (!data.items) return;
 
+  // 收集当前页面的choice项值（用于条件显示判断）
+  const pageValues = {};
+  data.items.forEach(item => {
+    if (item.key) {
+      pageValues[item.key] = item.value;
+    }
+  });
+
   let actionIdx = 0;
   data.items.forEach((item, idx) => {
+    // 条件显示：检查visibleWhen
+    if (item.visibleWhen) {
+      const cond = item.visibleWhen;
+      let visible = true;
+      for (const [key, val] of Object.entries(cond)) {
+        if (pageValues[key] !== val) {
+          visible = false;
+          break;
+        }
+      }
+      if (!visible) return;
+    }
     if (item.type === 'spacer') {
       body.appendChild(document.createElement('div')).style.height = '20px';
       return;
@@ -1445,6 +1470,10 @@ function renderPage(pageName) {
             item.value = newVal;
             val.textContent = newVal;
             val.dataset.current = newVal;
+            // 若此choice有key（如sata_controller），重新渲染以应用条件显示
+            if (item.key && currentRenderedPage) {
+              renderPage(currentRenderedPage);
+            }
           });
         }
       });
