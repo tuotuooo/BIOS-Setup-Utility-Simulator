@@ -1474,6 +1474,7 @@ function renderPage(pageName) {
       val.dataset.options = JSON.stringify(item.options);
       val.dataset.current = item.value;
       val.addEventListener('click', (e) => {
+        console.log('choice click', item.label, item.value, item.target, item.disabledWhen);
         e.stopPropagation();
         if (item.target) {
           // 有target时点击进入子页面（如选择语言）
@@ -1490,7 +1491,9 @@ function renderPage(pageName) {
               r.classList.remove('focused');
             }
           });
+          console.log('opening picker for', item.label, item.options, item.value);
           openInlinePicker(val, item.options, item.value, (newVal) => {
+            console.log('picker callback', item.label, 'newVal=', newVal);
             item.value = newVal;
             val.textContent = newVal;
             val.dataset.current = newVal;
