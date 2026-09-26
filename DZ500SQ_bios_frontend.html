@@ -248,15 +248,14 @@
   .submenu-arrow {
     pointer-events: none;
   }
-  /* 弹出式选择器（frame_0012风格：垂直下拉框，蓝色边框，灰底） */
+  /* 弹出式选择器：蓝底白字 + 白色内边框 + 交互态青蓝底 */
   .inline-picker {
     position:fixed;                       /* 视口绝对定位，脱离所有层叠上下文 */
-    padding:0;
+    padding:5px;                          /* 选择框与白色边框间距5px */
     display:flex;
     flex-direction:column;
-    background:var(--popup-bg);
-    border:1px solid var(--popup-border);
-    border-left:3px solid var(--popup-border);
+    background:var(--popup-border);        /* 蓝色背景 */
+    border:1px solid #ffffff;             /* 白色内边框 */
     z-index:200;
     font-size:13px;
     min-width:80px;
@@ -265,18 +264,18 @@
   .inline-option {
     padding:2px 12px;
     cursor:pointer;
-    color:var(--popup-unselected-text);
+    color:#ffffff;                        /* 默认白字 */
     white-space:nowrap;
-    background:var(--popup-bg);
+    background:transparent;               /* 默认透明底（露出蓝色背景） */
     text-align:left;
   }
   .inline-option:hover {
-    background:var(--popup-selected-bg);
-    color:var(--popup-selected-text);
+    background:#0080ff;                   /* 交互态：偏蓝青蓝底 */
+    color:#ffffff;
   }
   .inline-option.selected {
-    background:var(--popup-selected-bg);
-    color:var(--popup-selected-text);
+    background:#0080ff;                   /* 选中态：偏蓝青蓝底 */
+    color:#ffffff;
     font-weight:bold;
   }
   /* 右侧面板（帮助） */
