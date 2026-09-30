@@ -618,10 +618,10 @@ const subPages = {
     title: 'PCIe配置',
     help: '配置PCIe控制器。',
     items: [
-      { type:'choice', label:'PCIe PE0控制器 FOR M.2 SSD', value:'<打开>', options:['<关闭>','<打开>'], help:'使能PE2时，不能禁止PCIe PE0。' },
-      { type:'choice', label:'PCIe PE1控制器 FOR LAN', value:'<打开>', options:['<关闭>','<打开>'], help:'' },
-      { type:'choice', label:'PCIe PE4控制器 FOR PCIE X16 SLOT_1 X8', value:'<打开>', options:['<关闭>','<打开>'], help:'' },
-      { type:'choice', label:'PCIe PE5控制器 FOR PCIE X16 SLOT_2 X1', value:'<打开>', options:['<关闭>','<打开>'], help:'使能PE7时，不能禁止PCIe PE5。' }
+      { type:'choice', label:'PCIe PE0控制器 FOR M.2 SSD', value:'<打开>', options:['<关闭>','<打开>'], help:'使能PE2时，不能禁止PCIe PE0\n使能PE7时，不能禁止PCIe PE6' },
+      { type:'choice', label:'PCIe PE1控制器 FOR LAN', value:'<打开>', options:['<关闭>','<打开>'], help:'使能PE2时，不能禁止PCIe PE0\n使能PE7时，不能禁止PCIe PE6' },
+      { type:'choice', label:'PCIe PE4控制器 FOR PCIE X16 SLOT_1 X8', value:'<打开>', options:['<关闭>','<打开>'], help:'使能PE2时，不能禁止PCIe PE0\n使能PE7时，不能禁止PCIe PE6' },
+      { type:'choice', label:'PCIe PE5控制器 FOR PCIE X16 SLOT_2 X1', value:'<打开>', options:['<关闭>','<打开>'], help:'使能PE2时，不能禁止PCIe PE0\n使能PE7时，不能禁止PCIe PE6' }
     ]
   },
   sio_config: {
