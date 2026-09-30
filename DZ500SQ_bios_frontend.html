@@ -1368,7 +1368,7 @@ function renderPage(pageName) {
     header.textContent = '';
   }
 
-  helpText.textContent = data.help !== undefined ? data.help : '暂无帮助信息。';
+  helpText.innerHTML = data.help !== undefined ? data.help.replace(/\n/g, '<br>') : '暂无帮助信息。';
 
   body.innerHTML = '';
   focusedRowIdx = 0;
@@ -1810,7 +1810,7 @@ function bindKeyboard() {
 function updateHelpOnFocus() {
   const item = getFocusedItem();
   if (item && item.help !== undefined) {
-    document.getElementById('helpText').textContent = item.help;
+    document.getElementById('helpText').innerHTML = item.help.replace(/\n/g, '<br>');
   }
 }
 
