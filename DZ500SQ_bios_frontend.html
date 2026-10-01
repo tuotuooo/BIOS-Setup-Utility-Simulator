@@ -1346,7 +1346,7 @@ function activateFocusedRow() {
         valEl.dataset.current = newVal;
       });
     }
-  } else if (item.type === 'submenu') {
+  } else if (item.type === 'submenu' || item.type === 'pci-row') {
     if (item.target) {
       historyStack.push(currentRenderedPage);
       renderPage(item.target);
