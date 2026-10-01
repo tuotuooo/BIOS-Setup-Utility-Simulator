@@ -1224,21 +1224,37 @@ function updateTabVisibility(pageName) {
 }
 
 function findParentTab(subPageName) {
-  // 遍历biosData查找哪个一级页面包含指向该子页面的submenu
+  // 遍历biosData查找哪个一级页面包含指向该子页面的submenu/pci-row
   for (const [tabName, tabData] of Object.entries(biosData)) {
     if (tabData.items) {
       for (const item of tabData.items) {
-        if (item.type === 'submenu' && item.target === subPageName) {
+        if ((item.type === 'submenu' || item.type === 'pci-row') && item.target === subPageName) {
           return tabName;
         }
       }
     }
   }
-  // 三级子页面：在subPages中查找哪个子页面包含指向该三级页面的submenu
+  // 三级子页面：在subPages中查找哪个子页面包含指向该三级页面的submenu/pci-row
   for (const [pageName, pageData] of Object.entries(subPages)) {
     if (pageData.items) {
       for (const item of pageData.items) {
-        if (item.type === 'submenu' && item.target === subPageName) {
+        if ((item.type === 'submenu' || item.type === 'pci-row') && item.target === subPageName) {
+          // 递归查找该子页面的父Tab
+          return findParentTab(pageName);
+        }
+      }
+    }
+  }
+  return 'home'; // fallback
+}
+      }
+    }
+  }
+  // 三级子页面：在subPages中查找哪个子页面包含指向该三级页面的submenu/pci-row
+  for (const [pageName, pageData] of Object.entries(subPages)) {
+    if (pageData.items) {
+      for (const item of pageData.items) {
+        if ((item.type === 'submenu' || item.type === 'pci-row') && item.target === subPageName) {
           // 递归查找该子页面的父Tab
           return findParentTab(pageName);
         }
