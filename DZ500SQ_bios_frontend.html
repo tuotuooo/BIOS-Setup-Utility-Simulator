@@ -258,7 +258,7 @@
   .pci-col-4 { width: 50px; }  /* 厂商ID */
   .pci-col-5 { width: 50px; }  /* 设备ID */
   .pci-col-6 { width: 120px; } /* 链路速率 */
-  .pci-col-7 { width: 50px; }  /* 链路带宽 */
+  .pci-col-7 { width: 80px; }  /* 链路带宽 */
   .pci-col-8 { width: 150px; } /* 设备类 */
   /* 子菜单箭头：纯视觉指示，不参与交互 */
   .submenu-arrow {
@@ -1558,13 +1558,16 @@ function renderPage(pageName) {
       label.style.whiteSpace = 'normal';
       val.className = 'info-value';
       val.textContent = '';
-      row.style.cursor = 'pointer';
-      row.addEventListener('click', () => {
-        if (item.target) {
-          historyStack.push(currentRenderedPage);
-          renderPage(item.target);
-        }
-      });
+      // 表头行(noArrow)不需要交互效果
+      if (!item.noArrow) {
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => {
+          if (item.target) {
+            historyStack.push(currentRenderedPage);
+            renderPage(item.target);
+          }
+        });
+      }
      } else if (item.type === 'submenu') {
         // 子菜单：▶箭头在label文字左侧（实机风格）
         row.classList.add('is-submenu');
