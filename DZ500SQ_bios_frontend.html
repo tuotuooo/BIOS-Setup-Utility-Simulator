@@ -145,6 +145,9 @@
   .info-row.readonly .info-value {
     color: var(--label-text);
   }
+  .info-row.readonly .info-label {
+    color: var(--label-text);  /* readonly行label保持默认色，不被focused覆盖 */
+  }
   /* 只读行无焦点视觉反馈（实机BIOS：纯灰色行不可交互，无高亮） */
   .info-row.readonly.focused {
     background: transparent;
