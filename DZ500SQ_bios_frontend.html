@@ -1541,7 +1541,7 @@ function renderPage(pageName) {
       });
     } else if (item.type === 'pci-row') {
       // PCI设备列表行：固定列宽渲染
-      row.classList.add('is-submenu');
+      if (!item.noArrow) row.classList.add('is-submenu');
       const cols = item.data || item.label.split(/\s+/).filter(s => s);
       let html = '<div class="pci-row-label">';
       if (!item.noArrow) {
