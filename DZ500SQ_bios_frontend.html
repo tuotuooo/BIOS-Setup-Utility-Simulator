@@ -1451,7 +1451,7 @@ function renderPage(pageName) {
         }
       }
     }
-    row.className = 'info-row' + (item.type === 'text' || isDisabled ? ' readonly' : '');
+    row.className = 'info-row' + (item.type === 'text' || item.type === 'pci-row' && item.noArrow || isDisabled ? ' readonly' : '');
     row.dataset.idx = idx;
     row.dataset.type = item.type; // 标记行类型
 
