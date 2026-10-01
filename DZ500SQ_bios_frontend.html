@@ -244,7 +244,6 @@
     font-weight:bold;
     cursor:pointer;
     display:inline-block;
-    width:2ch;
     text-align:left;
     pointer-events:none;
   }
@@ -655,17 +654,17 @@ const subPages = {
     title: 'PCI设备信息',
     help: '显示PCI设备信息。',
     items: [
-      { type:'text', label:'    SEG    BUS   DEV   FUN   厂商ID   设备ID   链路速率       链路带宽   设备类', value:'' },
-      { type:'submenu', label:'0000  00   01   00   1D17   3604   N/A            N/A      VGA controller', target:'pci_dev_00_01_00', help:'显示该PCI设备详细信息。' },
-      { type:'submenu', label:'0000  00   01   01   1D17   9144   N/A            N/A      Multimedia device', target:'pci_dev_00_01_01', help:'显示该PCI设备详细信息。' },
-      { type:'submenu', label:'0000  00   0F   00   1D17   98E3   N/A            N/A      SATA AHCI', target:'pci_dev_00_0f_00', help:'显示该PCI设备详细信息。' },
-      { type:'submenu', label:'0000  00   10   00   1D17   3030   N/A            N/A      USB UHCI', target:'pci_dev_00_10_00', help:'显示该PCI设备详细信息。' },
-      { type:'submenu', label:'0000  00   10   01   1D17   3038   N/A            N/A      USB UHCI', target:'pci_dev_00_10_01', help:'显示该PCI设备详细信息。' },
-      { type:'submenu', label:'0000  00   10   07   1D17   3104   N/A            N/A      USB EHCI', target:'pci_dev_00_10_07', help:'显示该PCI设备详细信息。' },
-      { type:'submenu', label:'0000  00   12   00   1D17   9204   N/A            N/A      USB XHCI', target:'pci_dev_00_12_00', help:'显示该PCI设备详细信息。' },
-      { type:'submenu', label:'0000  00   14   00   1D17   328B   N/A            N/A      Multimedia device', target:'pci_dev_00_14_00', help:'显示该PCI设备详细信息。' },
-      { type:'submenu', label:'0000  01   00   00   1D57   5216   Gen3(8GT/s)    x2       NVMe', target:'pci_dev_01_00_00', help:'显示该PCI设备详细信息。' },
-      { type:'submenu', label:'0000  03   00   00   10EC   8168   Gen1(2.5GT/s)  x1       Ethernet controller', target:'pci_dev_03_00_00', help:'显示该PCI设备详细信息。' }
+      { type:'text', label:'  SEG   BUS  DEV  FUN  厂商ID  设备ID  链路速率       链路带宽  设备类', value:'' },
+      { type:'submenu', label:'0000  00  01  00  1D17   3604   N/A            N/A      VGA controller', target:'pci_dev_00_01_00', help:'显示该PCI设备详细信息。' },
+      { type:'submenu', label:'0000  00  01  01  1D17   9144   N/A            N/A      Multimedia device', target:'pci_dev_00_01_01', help:'显示该PCI设备详细信息。' },
+      { type:'submenu', label:'0000  00  0F  00  1D17   98E3   N/A            N/A      SATA AHCI', target:'pci_dev_00_0f_00', help:'显示该PCI设备详细信息。' },
+      { type:'submenu', label:'0000  00  10  00  1D17   3030   N/A            N/A      USB UHCI', target:'pci_dev_00_10_00', help:'显示该PCI设备详细信息。' },
+      { type:'submenu', label:'0000  00  10  01  1D17   3038   N/A            N/A      USB UHCI', target:'pci_dev_00_10_01', help:'显示该PCI设备详细信息。' },
+      { type:'submenu', label:'0000  00  10  07  1D17   3104   N/A            N/A      USB EHCI', target:'pci_dev_00_10_07', help:'显示该PCI设备详细信息。' },
+      { type:'submenu', label:'0000  00  12  00  1D17   9204   N/A            N/A      USB XHCI', target:'pci_dev_00_12_00', help:'显示该PCI设备详细信息。' },
+      { type:'submenu', label:'0000  00  14  00  1D17   328B   N/A            N/A      Multimedia device', target:'pci_dev_00_14_00', help:'显示该PCI设备详细信息。' },
+      { type:'submenu', label:'0000  01  00  00  1D57   5216   Gen3(8GT/s)    x2       NVMe', target:'pci_dev_01_00_00', help:'显示该PCI设备详细信息。' },
+      { type:'submenu', label:'0000  03  00  00  10EC   8168   Gen1(2.5GT/s)  x1       Ethernet controller', target:'pci_dev_03_00_00', help:'显示该PCI设备详细信息。' }
     ]
   },
   power_config: {
