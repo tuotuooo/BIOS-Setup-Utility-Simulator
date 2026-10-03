@@ -254,6 +254,11 @@
     text-overflow: ellipsis;
   }
   .pci-arrow-spacer { width: 18px; flex-shrink: 0; }
+  /* PCI设备行▶箭头：灰色无交互感，不跟随子菜单蓝色 */
+  .info-row.is-submenu .info-label .pci-arrow-spacer,
+  .info-row.focused.is-submenu .info-label .pci-arrow-spacer {
+    color: var(--label-text);
+  }
   .pci-col-0 { width: 45px; }  /* SEG */
   .pci-col-1 { width: 30px; }  /* BUS */
   .pci-col-2 { width: 30px; }  /* DEV */
@@ -1231,22 +1236,6 @@ function findParentTab(subPageName) {
         if ((item.type === 'submenu' || item.type === 'pci-row') && item.target === subPageName) {
           return tabName;
         }
-      }
-    }
-  }
-  // 三级子页面：在subPages中查找哪个子页面包含指向该三级页面的submenu/pci-row
-  for (const [pageName, pageData] of Object.entries(subPages)) {
-    if (pageData.items) {
-      for (const item of pageData.items) {
-        if ((item.type === 'submenu' || item.type === 'pci-row') && item.target === subPageName) {
-          // 递归查找该子页面的父Tab
-          return findParentTab(pageName);
-        }
-      }
-    }
-  }
-  return 'home'; // fallback
-}
       }
     }
   }
