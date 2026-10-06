@@ -475,9 +475,9 @@ const biosData = {
       { type:'submenu', label:'电源配置', target:'power_config', help:'电源配置' },
       { type:'submenu', label:'CPU配置', target:'cpu_config', help:'显示和配置CPU参数。' },
       { type:'submenu', label:'内存配置', target:'mem_config', help:'选择此选项查看内存配置。' },
-      { type:'submenu', label:'串口重定向', target:'serial_redirect', help:'配置串口重定向功能。' },
+      { type:'submenu', label:'串口重定向', target:'serial_redirect', help:'串口重定向配置菜单。' },
       { type:'submenu', label:'虚拟化配置', target:'virt_config', help:'配置CPU虚拟化技术。' },
-      { type:'submenu', label:'UEFI HII配置', target:'uefi_hii', help:'配置UEFI人机界面基础设施。' }
+      { type:'submenu', label:'UEFI HII配置', target:'uefi_hii', help:'提供设备支持的UEFI HII(人机界面基础设施)的配置。' }
     ]
   },
   security: {
@@ -486,8 +486,10 @@ const biosData = {
     items: [
       { type:'text', label:'管理员密码', value:'未安装' },
       { type:'text', label:'用户密码', value:'未安装' },
-      { type:'action', label:'设置管理员密码', value:'<进入>', help:'设置管理员密码。' },
-      { type:'action', label:'设置用户密码', value:'<进入>', help:'设置用户密码。' },
+      { type:'spacer' },
+      { type:'text', label:'设置管理员密码', value:'' },
+      { type:'text', label:'设置用户密码', value:'' },
+      { type:'spacer' },
       { type:'submenu', label:'硬盘密码', target:'drive_select', help:'选择此项设置硬盘密码。TCG-OPAL/ATA-SEC标识当前所使用的安全协议。使用TCG-OPAL协议的NVMe需要关闭电源才能改变安全状态。' },
       { type:'submenu', label:'安全启动', target:'secure_boot', help:'配置安全启动选项。' },
       { type:'submenu', label:'TCG配置', target:'tcg_config', help:'配置TCG可信计算功能。' },
@@ -734,24 +736,34 @@ const subPages = {
     title: '串口重定向',
     help: '配置串口重定向功能。',
     items: [
-      { type:'choice', label:'串口重定向', value:'<关闭>', options:['<关闭>','<打开>'], help:'串口重定向' }
+      { type:'text', label:'串口重定向', value:'' },
+      { type:'spacer' },
+      { type:'choice', label:'串口重定向', value:'<关闭>', options:['<关闭>','<打开>'], help:'DOS串口重定向，只支持MS-DOS 7.1及下版本，不支持Windows 98 MS-D0S。' }
     ]
   },
   virt_config: {
     title: '虚拟化配置',
     help: '配置CPU虚拟化技术。',
     items: [
-      { type:'choice', label:'虚拟化技术', value:'<打开>', options:['<关闭>','<打开>'], help:'启用或禁用CPU虚拟化技术支持。' },
-      { type:'choice', label:'VT-d', value:'<打开>', options:['<关闭>','<打开>'], help:'启用或禁用I/O虚拟化技术。' }
+      { type:'choice', label:'启用IOV支持', value:'<关闭>', options:['<关闭>','<开启>'], help:'启用IOV支持' }
     ]
   },
   uefi_hii: {
     title: 'UEFI HII配置',
     help: '配置UEFI人机界面基础设施。',
     items: [
-      { type:'text', label:'', value:'提供设备支持的UEFI HII（人机界面基础设施）的配置。' }
+      { type:'submenu', label:'Tls身份验证配置', target:'tls_auth_config', help:'Tls身份验证配置' },
+      { type:'submenu', label:'Realtek PCIe GBE Family Controller（MAC:00:00:00:00:00:00）', target:'realtek_gbe', help:'Realtek PCIe GBE Family Controller' },
+      { type:'submenu', label:'虚拟局域网配置（MAC:00:00:00:00:00:00）', target:'vlan_config', help:'虚拟局域网配置' },
+      { type:'submenu', label:'IPv4网络配置（MAC:00:00:00:00:00:00）', target:'ipv4_config', help:'IPv4网络配置' },
+      { type:'submenu', label:'IPv6网络配置（MAC:00:00:00:00:00:00）', target:'ipv6_config', help:'IPv6网络配置' }
     ]
   },
+  tls_auth_config: { title:'Tls身份验证配置', help:'Tls身份验证配置', items:[] },
+  realtek_gbe: { title:'Realtek PCIe GBE Family Controller', help:'Realtek PCIe GBE Family Controller', items:[] },
+  vlan_config: { title:'虚拟局域网配置', help:'虚拟局域网配置', items:[] },
+  ipv4_config: { title:'IPv4网络配置', help:'IPv4网络配置', items:[] },
+  ipv6_config: { title:'IPv6网络配置', help:'IPv6网络配置', items:[] },
   drive_select: {
     title: '选择驱动器',
     help: '选择此项设置硬盘密码。TCG-OPAL/ATA-SEC标识当前所使用的安全协议。使用TCG-OPAL协议的NVMe需要关闭电源才能改变安全状态。',
@@ -1584,7 +1596,7 @@ function renderPage(pageName) {
           }
         });
       }
-     } else if (item.type === 'submenu') {
+      } else if (item.type === 'submenu') {
         // 子菜单：▶箭头在label文字左侧（实机风格）
         row.classList.add('is-submenu');
          label.innerHTML = '<div class="submenu-arrow">▶</div>' + item.label;
@@ -1598,7 +1610,7 @@ function renderPage(pageName) {
             renderPage(item.target);
           }
         });
-    } else {
+      } else {
       // text 类型：只读信息（支持 \n 换行）
       val.className = 'info-value';
       // 将 \n 转为 <br> 以支持多行显示（如内存插槽详细信息）
