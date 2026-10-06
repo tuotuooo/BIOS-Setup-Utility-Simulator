@@ -308,6 +308,60 @@
     color:#ffffff;
     font-weight:bold;
   }
+  /* 密码输入弹窗 */
+  .password-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+  }
+  .password-box {
+    background: #0000b8;
+    border: 2px solid #ffffff;
+    padding: 20px 40px;
+    text-align: center;
+    min-width: 300px;
+  }
+  .password-box .title {
+    color: #ffffff;
+    font-size: 14px;
+    margin-bottom: 15px;
+  }
+  .password-box .input-area {
+    background: #000000;
+    color: #ffffff;
+    border: 1px solid #ffffff;
+    padding: 5px 10px;
+    font-size: 13px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 15px;
+    text-align: left;
+    min-height: 24px;
+  }
+  .password-box .btn-row {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  }
+  .password-box .btn {
+    color: #ffffff;
+    font-size: 12px;
+    padding: 3px 15px;
+    border: 1px solid #ffffff;
+    cursor: pointer;
+    background: transparent;
+  }
+  .password-box .btn:hover {
+    background: #ffffff;
+    color: #0000b8;
+  }
   /* 右侧面板（帮助） */
   .help-panel {
     width:260px;
@@ -487,8 +541,8 @@ const biosData = {
       { type:'text', label:'管理员密码', value:'未安装' },
       { type:'text', label:'用户密码', value:'未安装' },
       { type:'spacer' },
-      { type:'text', label:'设置管理员密码', value:'' },
-      { type:'text', label:'设置用户密码', value:'' },
+      { type:'action', label:'设置管理员密码', value:'<进入>', action:'password', help:'设置管理员密码' },
+      { type:'action', label:'设置用户密码', value:'<进入>', action:'password', help:'设置用户密码' },
       { type:'spacer' },
       { type:'submenu', label:'硬盘密码', target:'drive_select', help:'选择此项设置硬盘密码。TCG-OPAL/ATA-SEC标识当前所使用的安全协议。使用TCG-OPAL协议的NVMe需要关闭电源才能改变安全状态。' },
       { type:'submenu', label:'安全启动', target:'secure_boot', help:'配置安全启动选项。' },
@@ -1565,8 +1619,12 @@ function renderPage(pageName) {
       val.className = 'info-value highlight';
       val.textContent = item.value;
       val.style.cursor = 'pointer';
-      val.addEventListener('click', () => {
-        alert(`${item.label}: 执行操作`);
+      row.addEventListener('click', () => {
+        if (item.action === 'password') {
+          openPasswordDialog(item.label);
+        } else {
+          alert(`${item.label}: 执行操作`);
+        }
       });
     } else if (item.type === 'pci-row') {
       // PCI设备列表行：固定列宽渲染
@@ -1745,6 +1803,39 @@ function openInputDialog(title, current, callback) {
   if (newVal !== null) {
     callback('[' + newVal + ']');
   }
+}
+
+function openPasswordDialog(title) {
+  const modal = document.createElement('div');
+  modal.className = 'password-modal';
+  modal.innerHTML = `
+    <div class="password-box">
+      <div class="title">请输入新密码</div>
+      <div class="input-area" id="pwdInput" contenteditable="true"></div>
+      <div class="btn-row">
+        <span class="btn" id="pwdOk">确定</span>
+        <span class="btn" id="pwdCancel">取消</span>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  const input = modal.querySelector('#pwdInput');
+  input.focus();
+  modal.querySelector('#pwdOk').addEventListener('click', () => {
+    document.body.removeChild(modal);
+  });
+  modal.querySelector('#pwdCancel').addEventListener('click', () => {
+    document.body.removeChild(modal);
+  });
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) document.body.removeChild(modal);
+  });
+  document.addEventListener('keydown', function escHandler(e) {
+    if (e.key === 'Escape') {
+      document.body.removeChild(modal);
+      document.removeEventListener('keydown', escHandler);
+    }
+  });
 }
 
 // ==================== 搜索 ====================
