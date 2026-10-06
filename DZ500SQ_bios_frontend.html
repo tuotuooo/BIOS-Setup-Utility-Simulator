@@ -171,16 +171,16 @@
     color: var(--submenu-text);  /* 默认蓝色 */
   }
   .info-row.is-submenu .info-label .submenu-arrow {
-    color: var(--submenu-text);  /* ▶箭头也蓝色 */
+    color: var(--label-text);  /* ▶箭头灰色，统一风格 */
   }
   /* 选中态：提升 specificity 覆盖默认蓝色 */
   .info-row.focused.is-submenu .info-label,
   .info-row.focused .info-label {
     color: #ffffff;  /* 选中时标签文字变白 */
   }
-  /* 选中时箭头保持蓝色，只有文字变白（实机风格） */
+  /* 选中时箭头保持灰色，只有文字变白 */
   .info-row.focused.is-submenu .info-label .submenu-arrow {
-    color: var(--submenu-text);  /* 箭头保持蓝色 */
+    color: var(--label-text);  /* 箭头保持灰色 */
   }
   .info-label {
     color:var(--label-text);
@@ -253,12 +253,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .pci-arrow-spacer { width: 18px; flex-shrink: 0; }
-  /* PCI设备行▶箭头：灰色无交互感，不跟随子菜单蓝色 */
-  .info-row.is-submenu .info-label .pci-arrow-spacer,
-  .info-row.focused.is-submenu .info-label .pci-arrow-spacer {
-    color: var(--label-text);
-  }
   .pci-col-0 { width: 45px; }  /* SEG */
   .pci-col-1 { width: 30px; }  /* BUS */
   .pci-col-2 { width: 30px; }  /* DEV */
@@ -268,12 +262,15 @@
   .pci-col-6 { width: 120px; } /* 链路速率 */
   .pci-col-7 { width: 80px; }  /* 链路带宽 */
   .pci-col-8 { width: 150px; } /* 设备类 */
-  /* 子菜单箭头：纯视觉指示，不参与交互 */
+  /* ▶箭头：统一灰色、小字号、纯视觉指示，不参与交互 */
   .submenu-arrow {
-    color:var(--submenu-text);
+    color:var(--label-text);
     font-weight:bold;
+    font-size:10px;
     cursor:pointer;
     display:inline-block;
+    width:18px;
+    flex-shrink:0;
     text-align:left;
     pointer-events:none;
   }
@@ -472,7 +469,7 @@ const biosData = {
     label: '高级',
     help: '高级系统配置选项。',
     items: [
-      { type:'submenu', label:'电源配置', target:'power_config', help:'配置电源管理选项。' },
+      { type:'submenu', label:'电源配置', target:'power_config', help:'电源配置' },
       { type:'submenu', label:'CPU配置', target:'cpu_config', help:'显示和配置CPU参数。' },
       { type:'submenu', label:'内存配置', target:'mem_config', help:'配置内存运行参数。' },
       { type:'submenu', label:'串口重定向', target:'serial_redirect', help:'配置串口重定向功能。' },
@@ -701,8 +698,8 @@ const subPages = {
     title: '电源配置',
     help: '配置电源管理选项。',
     items: [
-      { type:'choice', label:'ACPI睡眠状态', value:'<S3>', options:['<S1>','<S3>','<S4>'], help:'配置ACPI睡眠状态。' },
-      { type:'choice', label:'电源恢复后状态', value:'<关机>', options:['<关机>','<开机>','<上次状态>'], help:'设置AC电源恢复后的系统状态。' },
+      { type:'choice', label:'ACPI睡眠状态', value:'<S3>', options:['<关闭>','<S1>','<S3>','<S1和S3>'], help:'选择在SUSPEND按钮按下后，系统将会进入的ACPI睡眠状态。' },
+      { type:'choice', label:'电源恢复后状态', value:'<关机>', options:['<关机>','<上一个状态>','<开机>'], help:'自动上电相关功能。' },
       { type:'submenu', label:'自动上电', target:'auto_power', help:'配置自动上电时间。' }
     ]
   },
@@ -770,8 +767,11 @@ const subPages = {
     title: '自动上电',
     help: '配置自动上电时间。',
     items: [
-      { type:'choice', label:'自动上电', value:'<关闭>', options:['<关闭>','<打开>'], help:'启用或禁用自动上电功能。' },
-      { type:'input', label:'自动上电时间', value:'[00:00:00]', help:'设置自动上电时间，格式: HH:MM:SS。' }
+      { type:'choice', label:'始终唤醒', value:'<关闭>', options:['<一次>','<每天>','<每周>','<用户自定义>','<分钟>','<秒>','<关闭>'], help:'待补' },
+      { type:'input', label:'时钟时间（时：分：秒）', value:'', help:'待补' },
+      { type:'input', label:'时钟日期（月/日/年）', value:'', help:'待补' },
+      { type:'choice', label:'每周唤醒日期', value:'', options:[], help:'待补' },
+      { type:'submenu', label:'用户自定义唤醒', target:'', help:'待补' }
     ]
   },
   secure_boot: {
@@ -1404,7 +1404,12 @@ function renderPage(pageName) {
     header.textContent = '';
   }
 
-  helpText.innerHTML = data.help !== undefined ? data.help.replace(/\n/g, '<br>') : '暂无帮助信息。';
+  // 一级页面不显示帮助信息，子页面显示
+  if (subPages[pageName]) {
+    helpText.innerHTML = data.help !== undefined ? data.help.replace(/\n/g, '<br>') : '';
+  } else {
+    helpText.innerHTML = '';
+  }
 
   body.innerHTML = '';
   focusedRowIdx = 0;
@@ -1553,9 +1558,9 @@ function renderPage(pageName) {
       const cols = item.data || item.label.split(/\s+/).filter(s => s);
       let html = '<div class="pci-row-label">';
       if (!item.noArrow) {
-        html += '<div class="pci-arrow-spacer">▶</div>';
+        html += '<div class="submenu-arrow">▶</div>';
       } else {
-        html += '<div class="pci-arrow-spacer"></div>';
+        html += '<div class="submenu-arrow">&nbsp;</div>';
       }
       cols.forEach((col, i) => {
         html += `<div class="pci-col pci-col-${i}">${col}</div>`;
