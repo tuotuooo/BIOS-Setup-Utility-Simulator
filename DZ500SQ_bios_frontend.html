@@ -187,6 +187,7 @@
     width:520px;
     flex-shrink:0;
     white-space:pre;
+    padding-left:18px;
     font-family:"NSimSun","SimSun","Courier New","Consolas",monospace;
   }
   .info-value {
@@ -254,6 +255,7 @@
     text-overflow: ellipsis;
   }
   .pci-col-0 { width: 45px; }  /* SEG */
+  .pci-header .pci-col-0 { padding-left: 18px; }  /* 表头缩进对齐arrow列宽 */
   .pci-col-1 { width: 30px; }  /* BUS */
   .pci-col-2 { width: 30px; }  /* DEV */
   .pci-col-3 { width: 30px; }  /* FUN */
@@ -271,6 +273,7 @@
     display:inline-block;
     width:18px;
     flex-shrink:0;
+    margin-left:-18px;
     text-align:left;
     pointer-events:none;
   }
@@ -707,22 +710,24 @@ const subPages = {
     title: 'CPU配置',
     help: '显示和配置CPU参数。',
     items: [
-      { type:'text', label:'CPU类型', value:'ZHAOXIN KaiXian KX-U6780A@2.7GHz' },
-      { type:'text', label:'CPU最大频率', value:'2700 MHz' },
-      { type:'text', label:'CPU核心数量', value:'8 Cores 8 Threads' },
-      { type:'text', label:'一级指令缓存大小', value:'8 * 32 KB' },
-      { type:'text', label:'一级数据缓存大小', value:'8 * 32 KB' },
-      { type:'text', label:'二级缓存大小', value:'2 * 4096 KB' },
-      { type:'text', label:'CPU ID', value:'307B1' },
-      { type:'text', label:'处理器微码补丁版本', value:'0000721F 01/06/2023' }
+      { type:'choice', label:'MCA支持', value:'<打开>', options:['<关闭>','<打开>'], help:'MCA支持' },
+      { type:'choice', label:'AVX支持', value:'<打开>', options:['<关闭>','<打开>'], help:'AVX支持' }
     ]
   },
   mem_config: {
     title: '内存配置',
     help: '配置内存运行参数。',
     items: [
-      { type:'choice', label:'内存频率', value:'<自动>', options:['<自动>','<2133>','<2400>','<2666>','<2933>','<3200>'], help:'设置内存运行频率。' },
-      { type:'choice', label:'内存时序', value:'<自动>', options:['<自动>','<手动>'], help:'设置内存时序模式。' }
+      { type:'text', label:'内存信息', value:'' },
+      { type:'text', label:'当前内存速度', value:'2666 MT/s' },
+      { type:'text', label:'总内存大小', value:'8 GB' },
+      { type:'text', label:'内存插槽1', value:'厂商 : Kingston\n型号 : TF32D4U2S1HCH-8\n大小 : 8GB\n1Rx16\n类型 : UDIMM\nECC : No\n序列号 : 79162D6B' },
+      { type:'text', label:'内存插槽2', value:'N/A' },
+      { type:'spacer' },
+      { type:'text', label:'内存配置', value:'' },
+      { type:'choice', label:'内存时钟频率', value:'<By SPD>', options:['<By SPD>'], help:'内存时钟频率' },
+      { type:'choice', label:'内存快速启动', value:'<关闭>', options:['<关闭>','<打开>'], help:'内存快速启动' },
+      { type:'choice', label:'UCA共享内存', value:'<自动>', options:['<自动>','<关闭>','<打开>'], help:'UCA共享内存' }
     ]
   },
   serial_redirect: {
@@ -767,7 +772,7 @@ const subPages = {
     title: '自动上电',
     help: '配置自动上电时间。',
     items: [
-      { type:'choice', label:'始终唤醒', value:'<关闭>', options:['<一次>','<每天>','<每周>','<用户自定义>','<分钟>','<秒>','<关闭>'], help:'待补' },
+      { type:'choice', label:'时钟唤醒', value:'<关闭>', options:['<一次>','<每天>','<每周>','<用户自定义>','<分钟>','<秒>','<关闭>'], help:'选择是否打开时钟唤醒功能，可以允许您的系统在一个特定的年月日唤醒。注意:设定的值有可能被操作系统覆盖掉。' },
       { type:'input', label:'时钟时间（时：分：秒）', value:'', help:'待补' },
       { type:'input', label:'时钟日期（月/日/年）', value:'', help:'待补' },
       { type:'choice', label:'每周唤醒日期', value:'', options:[], help:'待补' },
@@ -1555,12 +1560,11 @@ function renderPage(pageName) {
     } else if (item.type === 'pci-row') {
       // PCI设备列表行：固定列宽渲染
       if (!item.noArrow) row.classList.add('is-submenu');
+      else row.classList.add('pci-header');
       const cols = item.data || item.label.split(/\s+/).filter(s => s);
       let html = '<div class="pci-row-label">';
       if (!item.noArrow) {
         html += '<div class="submenu-arrow">▶</div>';
-      } else {
-        html += '<div class="submenu-arrow">&nbsp;</div>';
       }
       cols.forEach((col, i) => {
         html += `<div class="pci-col pci-col-${i}">${col}</div>`;
@@ -1584,7 +1588,8 @@ function renderPage(pageName) {
      } else if (item.type === 'submenu') {
         // 子菜单：▶箭头在label文字左侧（实机风格）
         row.classList.add('is-submenu');
-        label.innerHTML = '<span class="submenu-arrow">▶</span>' + item.label;
+         label.innerHTML = '<div class="submenu-arrow">▶</div>' + item.label;
+         label.style.display = 'flex';
         val.className = 'info-value';  /* 值列清空，不显示▶ */
         val.textContent = '';  /* 不显示任何值 */
         row.style.cursor = 'pointer';
