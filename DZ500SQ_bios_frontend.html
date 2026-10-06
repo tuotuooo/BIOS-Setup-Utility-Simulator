@@ -474,7 +474,7 @@ const biosData = {
     items: [
       { type:'submenu', label:'电源配置', target:'power_config', help:'电源配置' },
       { type:'submenu', label:'CPU配置', target:'cpu_config', help:'显示和配置CPU参数。' },
-      { type:'submenu', label:'内存配置', target:'mem_config', help:'配置内存运行参数。' },
+      { type:'submenu', label:'内存配置', target:'mem_config', help:'选择此选项查看内存配置。' },
       { type:'submenu', label:'串口重定向', target:'serial_redirect', help:'配置串口重定向功能。' },
       { type:'submenu', label:'虚拟化配置', target:'virt_config', help:'配置CPU虚拟化技术。' },
       { type:'submenu', label:'UEFI HII配置', target:'uefi_hii', help:'配置UEFI人机界面基础设施。' }
@@ -725,17 +725,16 @@ const subPages = {
       { type:'text', label:'内存插槽2', value:'N/A' },
       { type:'spacer' },
       { type:'text', label:'内存配置', value:'' },
-      { type:'choice', label:'内存时钟频率', value:'<By SPD>', options:['<By SPD>'], help:'内存时钟频率' },
+      { type:'choice', label:'内存时钟频率', value:'<By SPD>', options:['<By SPD>','<1200 MHz>','<1333 MHz>'], help:'内存时钟频率' },
       { type:'choice', label:'内存快速启动', value:'<关闭>', options:['<关闭>','<打开>'], help:'内存快速启动' },
-      { type:'choice', label:'UCA共享内存', value:'<自动>', options:['<自动>','<关闭>','<打开>'], help:'UCA共享内存' }
+      { type:'choice', label:'UGA共享内存', value:'<自动>', options:['<64MB>','<128MB>','<256MB>','<512MB>','<自动>'], help:'UGA共享内存' }
     ]
   },
   serial_redirect: {
     title: '串口重定向',
     help: '配置串口重定向功能。',
     items: [
-      { type:'choice', label:'串口重定向', value:'<关闭>', options:['<关闭>','<打开>'], help:'启用或禁用串口重定向功能。仅支持MS-DOS 7.1及以下版本。' },
-      { type:'text', label:'说明', value:'此功能仅支持MS-DOS 7.1及以下版本。' }
+      { type:'choice', label:'串口重定向', value:'<关闭>', options:['<关闭>','<打开>'], help:'串口重定向' }
     ]
   },
   virt_config: {
