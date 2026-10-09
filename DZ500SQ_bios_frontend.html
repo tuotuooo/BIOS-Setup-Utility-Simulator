@@ -1703,8 +1703,12 @@ function renderPage(pageName) {
       } else {
       // text 类型：只读信息（支持 \n 换行）
       val.className = 'info-value';
-      // 将 \n 转为 <br> 以支持多行显示（如内存插槽详细信息）
-      val.innerHTML = item.value.replace(/\n/g, '<br>');
+      if (item.value.includes('\n')) {
+        // 多行文本使用 pre 保持格式和对齐
+        val.innerHTML = `<pre style="margin:0;padding:0;font-family:inherit;font-size:13px;line-height:1.4;color:var(--label-text);white-space:pre-wrap;">${item.value.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>`;
+      } else {
+        val.innerHTML = item.value.replace(/\n/g, '<br>');
+      }
       val.style.color = 'var(--label-text)';
       if (item.label === '') {
         label.style.display = 'none';
