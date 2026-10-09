@@ -360,6 +360,60 @@
     outline: none;
     caret-color: transparent;
   }
+  /* 硬盘密码双行输入弹窗 */
+  .hdd-password-box {
+    background: #0000b8;
+    outline: 2px solid #ffffff;
+    outline-offset: -10px;
+    padding: 5px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-width: 260px;
+    min-height: 120px;
+  }
+  .hdd-password-box .title {
+    color: #ffffff;
+    font-size: 14px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #ffffff;
+    padding-bottom: 4px;
+    width: 100%;
+    text-align: center;
+  }
+  .hdd-password-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-bottom: 4px;
+  }
+  .hdd-password-row label {
+    color: #ffffff;
+    font-size: 13px;
+    margin-right: 8px;
+    white-space: nowrap;
+  }
+  .hdd-password-row .input-area {
+    background: #000000;
+    color: #ffffff;
+    border: none;
+    padding: 0 1px;
+    font-size: 13px;
+    width: 130px;
+    box-sizing: border-box;
+    text-align: left;
+    display: inline-block;
+    vertical-align: middle;
+    height: 1em;
+    line-height: 1em;
+    min-height: unset;
+  }
+  .hdd-password-row .input-area:focus {
+    outline: none;
+    caret-color: transparent;
+  }
   /* 右侧面板（帮助） */
   .help-panel {
     width:260px;
@@ -837,12 +891,13 @@ const subPages = {
       { type:'text', label:'解锁状态', value:'已解锁' },
       { type:'text', label:'安全冻结状态', value:'未冻结' },
       { type:'spacer' },
+      { type:'spacer' },
       { type:'text', label:'请谨慎使用硬盘密码功能。', value:'' },
       { type:'text', label:'忘记密码后驱动器将永远无法使用。', value:'' },
       { type:'text', label:'设定立即生效，不需要保存。', value:'' },
       { type:'text', label:'（系统重启时，如果硬盘掉电。硬盘状态会重置，启动时需要再次输入密码;如硬盘未掉电，则硬盘状态保持。无需重新解锁。)', value:'' },
       { type:'spacer' },
-      { type:'action', label:'启用硬盘用户密码', value:'', action:'enable_hdd_user_pwd', help:'启用硬盘用户密码。' }
+      { type:'action', label:'启用硬盘用户密码', value:'', action:'enable_hdd_user_pwd', help:'设置硬盘用户密码，启用硬盘安全功能。设备需要关闭电源才能更新安全状态。\n密码支持字符包括字母、数字、空格以及特殊可打印字符。密码需要至少包含一个空格或特殊字符，需要至少包含小写字母、大写字母和数字中的两种。支持输入密码长度为8到32。\n处于已加密、未解锁状态的ATA设备，解锁重试至第三次时，仅正确的用户密码可以解锁成功。' }
     ]
   },
   drive_password: {
@@ -1295,6 +1350,7 @@ let historyStack = [];
 let focusedRowIdx = 0;
 let actionRows = []; // 当前页可交互行索引
 let activePicker = null; // 当前打开的弹出选择器
+let activePasswordModal = null; // 当前打开的密码弹窗
 
 // ==================== Tab显示控制 ====================
 function updateTabVisibility(pageName) {
@@ -1660,6 +1716,20 @@ function renderPage(pageName) {
               renderPage(currentRenderedPage);
             }
           });
+        } else if (item.action === 'enable_hdd_user_pwd') {
+          openHddPasswordDialog((pwd) => {
+            if (pwd) {
+              // 更新drive_select页面状态
+              if (subPages.drive_select && subPages.drive_select.items) {
+                const items = subPages.drive_select.items;
+                const enIdx = items.findIndex(i => i.label === '硬盘密码使能');
+                if (enIdx >= 0) items[enIdx].value = '已使能';
+                const userIdx = items.findIndex(i => i.label === '用户密码');
+                if (userIdx >= 0) items[userIdx].value = '已设置';
+              }
+              renderPage(currentRenderedPage);
+            }
+          });
         } else {
           alert(`${item.label}: 执行操作`);
         }
@@ -1867,10 +1937,14 @@ function openPasswordDialog(title, callback) {
     </div>
   `;
   document.body.appendChild(modal);
+  activePasswordModal = modal;
   const input = modal.querySelector('#pwdInput');
   input.focus();
   modal.addEventListener('click', (e) => {
-    if (e.target === modal) document.body.removeChild(modal);
+    if (e.target === modal) {
+      document.body.removeChild(modal);
+      activePasswordModal = null;
+    }
   });
   document.addEventListener('keydown', function escHandler(e) {
     e.stopPropagation();
@@ -1878,10 +1952,60 @@ function openPasswordDialog(title, callback) {
       const pwd = input.value;
       document.body.removeChild(modal);
       document.removeEventListener('keydown', escHandler);
+      activePasswordModal = null;
       if (callback) callback(pwd);
     } else if (e.key === 'Escape') {
       document.body.removeChild(modal);
       document.removeEventListener('keydown', escHandler);
+      activePasswordModal = null;
+    }
+  });
+}
+
+function openHddPasswordDialog(callback) {
+  const modal = document.createElement('div');
+  modal.className = 'password-modal';
+  modal.innerHTML = `
+    <div class="hdd-password-box">
+      <div class="title">请输入硬盘用户密码</div>
+      <div class="hdd-password-row">
+        <label>输入新密码</label>
+        <span style="color:#ffffff;">[</span><input type="password" class="input-area" id="hddPwdInput"><span style="color:#ffffff;">]</span>
+      </div>
+      <div class="hdd-password-row">
+        <label>确认新密码</label>
+        <span style="color:#ffffff;">[</span><input type="password" class="input-area" id="hddPwdConfirm"><span style="color:#ffffff;">]</span>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  activePasswordModal = modal;
+  const input1 = modal.querySelector('#hddPwdInput');
+  const input2 = modal.querySelector('#hddPwdConfirm');
+  input1.focus();
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      document.body.removeChild(modal);
+      activePasswordModal = null;
+    }
+  });
+  document.addEventListener('keydown', function escHandler(e) {
+    e.stopPropagation();
+    if (e.key === 'Enter') {
+      const pwd1 = input1.value;
+      const pwd2 = input2.value;
+      if (pwd1 !== pwd2) {
+        alert('两次输入的密码不一致');
+        return;
+      }
+      document.body.removeChild(modal);
+      document.removeEventListener('keydown', escHandler);
+      activePasswordModal = null;
+      if (callback) callback(pwd1);
+    } else if (e.key === 'Escape') {
+      document.body.removeChild(modal);
+      document.removeEventListener('keydown', escHandler);
+      activePasswordModal = null;
     }
   });
 }
@@ -1949,8 +2073,8 @@ function doSearch() {
 // ==================== 键盘支持 ====================
 function bindKeyboard() {
   document.addEventListener('keydown', (e) => {
-    // 弹出选择器打开时，不处理主导航按键
-    if (activePicker) return;
+    // 弹出选择器或密码弹窗打开时，不处理主导航按键
+    if (activePicker || activePasswordModal) return;
 
     const tabs = ['home','device','advanced','security','boot','exit','search'];
     const idx = tabs.indexOf(currentTab);
