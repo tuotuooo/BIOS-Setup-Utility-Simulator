@@ -195,6 +195,9 @@
     font-weight:bold;
     flex:1;
   }
+  .info-value.no-bold {
+    font-weight:normal;
+  }
   .info-value.editable {
     /* 实机风格：无白色背景框，直接显示在灰色背景上 */
     padding:0 4px;
@@ -834,7 +837,10 @@ const subPages = {
       { type:'text', label:'解锁状态', value:'已解锁' },
       { type:'text', label:'安全冻结状态', value:'未冻结' },
       { type:'spacer' },
-      { type:'text', label:'', value:'请谨慎使用硬盘密码功能。\n忘记密码后驱动器将永远无法使用。\n设定立即生效，不需要保存。\n（系统重启时，如果硬盘掉电。硬盘状态会重置，启动时需要再次输入密码;如硬盘未掉电，则硬盘状态保持。无需重新解锁。)' },
+      { type:'text', label:'请谨慎使用硬盘密码功能。', value:'' },
+      { type:'text', label:'忘记密码后驱动器将永远无法使用。', value:'' },
+      { type:'text', label:'设定立即生效，不需要保存。', value:'' },
+      { type:'text', label:'（系统重启时，如果硬盘掉电。硬盘状态会重置，启动时需要再次输入密码;如硬盘未掉电，则硬盘状态保持。无需重新解锁。)', value:'' },
       { type:'spacer' },
       { type:'action', label:'启用硬盘用户密码', value:'', action:'enable_hdd_user_pwd', help:'启用硬盘用户密码。' }
     ]
@@ -1702,7 +1708,7 @@ function renderPage(pageName) {
         });
       } else {
       // text 类型：只读信息（支持 \n 换行）
-      val.className = 'info-value';
+      val.className = 'info-value no-bold';
       val.textContent = item.value;
       val.style.color = 'var(--label-text)';
       if (item.label === '') {
