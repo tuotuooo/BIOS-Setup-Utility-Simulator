@@ -1,0 +1,2025 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>百敖ByoCore软件 V2.0 - DZ500SQ</title>
+<style>
+  /* ── 像素采样颜色变量（从frame_0003.jpg + frame_0012.jpg PIL精确提取） ═══ */
+  :root {
+    --title-bg:       #0000b8;  /* 标题栏背景 (0,0,184) */
+    --title-text:     #7cb342;  /* 标题栏文字：老树叶的绿色 */
+    --main-gray:      #aeaeae;  /* 主灰背景 (174,174,174) */
+    --tab-bg:         #0000b8;  /* Tab栏背景：深蓝 */
+    --tab-text:       #ffffff;  /* Tab未选中文字：白 */
+    --tab-active-bg:  #aeaeae;  /* Tab选中背景：灰 */
+    --tab-active-text:#0000b8;  /* Tab选中文字：蓝 */
+    --label-text:     #323232;  /* 标签文字 (50,50,50) frame_0012 */
+    --value-text:     #f0f0f0;  /* 值文字 (240,240,240) */
+    --arrow-color:    #f0f0f0;  /* ▶符号 */
+    --submenu-text:   #0000b8;  /* 子菜单文字 / 蓝色值文字 */
+    --help-text:      #262626;  /* 帮助文字 (38,38,38) frame_0012 */
+    --footer-bg:      #0000ae;  /* 底部栏背景 (0,0,174) frame_0012 */
+    --footer-text:    #b7b6b8;  /* 底部栏文字 (183,182,184) frame_0012 */
+    --copyright-bg:   #000000;  /* 版权背景 */
+    --copyright-text: #cbcbcb;  /* 版权文字 (203,203,203) frame_0012 */
+    --border-color:   #adb1ce;  /* 边框 */
+    --selected-row:   #b9b9b9;  /* 选中行 */
+    --divider-dark:   #0f0e47;  /* 深色分割线 */
+    --focus-bg:       #a0a0c0;  /* 键盘焦点行背景 */
+    /* 弹出选择器颜色 (frame_0012.jpg 精确提取) */
+    --popup-border:   #0000b4;  /* 弹出框蓝色边框 (0,0,180) */
+    --popup-bg:       #b4b4b5;  /* 弹出框灰色背景 (180,180,181) */
+    --popup-unselected-text: #0000b4;  /* 未选中项蓝色文字 */
+    --popup-selected-bg:    #0000b4;  /* 选中项蓝色背景 */
+    --popup-selected-text:  #ffffff;  /* 选中项白色文字 */
+    --bg:                   #aeaeae;  /* 全局背景色（与主灰背景一致） */
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body {
+    width:100%; height:100%;
+    font-family: "Courier New", "Consolas", "SimSun", monospace;
+    font-size:13px;
+    line-height:1.4;
+    background:#000;
+    overflow:hidden;
+  }
+  #bios-root {
+    width:100vw;
+    height:100vh;
+    background:var(--bg);
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    font-family:"Courier New","Consolas","Microsoft YaHei",monospace;
+  }
+  /* ── 顶部标题栏 ── */
+  .top-bar {
+    background:var(--title-bg);
+    color:var(--title-text);
+    text-align:center;
+    padding:2px 0;
+    font-size:14px;
+    font-weight:bold;
+    height:28px;
+    line-height:24px;
+  }
+  /* ── Tab导航 ── */
+  .tab-strip {
+    background:var(--tab-bg);          /* 未选中Tab栏背景：深蓝 */
+    display:flex;
+    padding:1px 8px 0;
+    height:27px;
+    align-items:flex-end;
+    border-bottom:none;  /* 实机：Tab栏与主内容区直接相连，无额外分隔线 */
+  }
+  .tab {
+    padding:2px 14px 1px;
+    font-size:12px;
+    color:var(--tab-text);             /* 未选中文字：白 */
+    cursor:pointer;
+    border:1px solid transparent;
+    border-bottom:none;
+    margin-right:2px;
+    user-select:none;
+    background:var(--tab-bg);          /* 未选中背景：深蓝 */
+  }
+  .tab:hover { color:var(--tab-text); }
+  .tab.active {
+    background:var(--tab-active-bg);   /* 选中背景：灰 */
+    color:var(--tab-active-text);      /* 选中文字：蓝 */
+    font-weight:bold;
+    position:relative;
+    top:1px;
+    border:1px solid var(--border-color);
+    border-bottom:1px solid var(--tab-active-bg);
+  }
+  /* ── 主工作区 ── */
+  .workspace {
+    flex:1;
+    display:flex;
+    background:var(--main-gray);
+    overflow:hidden;
+    border:2px solid var(--title-bg);       /* 完整外框 */
+    margin:8px 2px;                           /* 上下8px、左右2px内收，蓝色边框更靠近中心 */
+  }
+  /* 左中面板（信息区） */
+  .info-panel {
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    border-right:2px solid var(--title-bg);   /* 仅中间分隔线 */
+  }
+  .info-header {
+    background:var(--main-gray);
+    padding:2px 10px;
+    font-size:12px;
+    font-weight:bold;
+    color:var(--submenu-text);  /* 蓝色文字 */
+    border-bottom:1px solid var(--title-bg);  /* 蓝色分隔线 */
+    height:22px;
+    line-height:18px;
+    text-align:center;
+  }
+  .info-body {
+    flex:1;
+    overflow-y:auto;
+    padding:4px 8px;
+  }
+  /* 信息行 */
+  .info-row {
+    display:flex;
+    padding:1px 0;
+    font-size:13px;
+    min-height:18px;
+    align-items:center;
+    color:var(--label-text);
+    position:relative;
+  }
+  /* 只读行（text类型）：无交互状态 */
+  .info-row.readonly {
+    cursor: default;
+    pointer-events: none;  /* 完全不可交互：不接收鼠标事件 */
+  }
+  .info-row.readonly .info-value {
+    color: var(--label-text);
+  }
+  .info-row.readonly .info-label {
+    color: var(--label-text);  /* readonly行label保持默认色，不被focused覆盖 */
+  }
+  /* 只读行无焦点视觉反馈（实机BIOS：纯灰色行不可交互，无高亮） */
+  .info-row.readonly.focused {
+    background: transparent;
+    outline: none;
+  }
+  .info-row.focused {
+    /* 实机风格：选中项只变文字颜色，无背景高亮，无outline */
+  }
+  .info-row.focused .info-label {
+    color: #ffffff;  /* 选中时标签文字变白 */
+  }
+  .info-row.focused .info-value {
+    color: var(--submenu-text);
+  }
+  /* 子菜单行：label 默认蓝色（实机风格） */
+  .info-row.is-submenu .info-label {
+    color: var(--submenu-text);  /* 默认蓝色 */
+  }
+  /* choice 行：label 默认蓝色 */
+  .info-row.is-choice .info-label {
+    color: var(--submenu-text);  /* 默认蓝色 */
+  }
+  .info-row.is-submenu .info-label .submenu-arrow {
+    color: var(--label-text);  /* ▶箭头灰色，统一风格 */
+  }
+  /* 选中态：提升 specificity 覆盖默认蓝色 */
+  .info-row.focused.is-submenu .info-label,
+  .info-row.focused .info-label {
+    color: #ffffff;  /* 选中时标签文字变白 */
+  }
+  /* 选中时箭头保持灰色，只有文字变白 */
+  .info-row.focused.is-submenu .info-label .submenu-arrow {
+    color: var(--label-text);  /* 箭头保持灰色 */
+  }
+  .info-label {
+    color:var(--label-text);
+    width:520px;
+    flex-shrink:0;
+    white-space:pre;
+    padding-left:18px;
+    font-family:"NSimSun","SimSun","Courier New","Consolas",monospace;
+  }
+  .info-value {
+    color:var(--value-text);
+    font-weight:bold;
+    flex:1;
+  }
+  .info-value.editable {
+    /* 实机风格：无白色背景框，直接显示在灰色背景上 */
+    padding:0 4px;
+    cursor:pointer;
+    display:inline-block;
+    min-width:80px;
+    position:relative;  /* 让 inline-picker 以此为定位参照，left:0 对齐值文字左边缘 */
+  }
+  /* choice 值文字默认蓝色（如"选择语言"的 <中文>），选中时变白 */
+  .info-value.choice-value {
+    color: var(--submenu-text);        /* 默认蓝色 */
+  }
+  .info-row.focused .info-value.choice-value {
+    color: #ffffff;                     /* 选中时变白 */
+    font-weight:bold;
+  }
+  .info-value.highlight {
+    /* 实机风格：始终蓝底白字高亮（action行固定高亮） */
+    background: var(--title-bg);
+    color: #ffffff;
+    padding: 1px 8px;
+    border: 1px solid var(--title-bg);
+    display: inline-block;
+    font-weight: bold;
+  }
+  /* 子项缩进 */
+  .sub-row {
+    display:flex;
+    padding:0 0 0 24px;
+    font-size:12px;
+    min-height:16px;
+    color:var(--label-text);
+  }
+  .sub-row .s-label { width:140px; flex-shrink:0; }
+  .sub-row .s-value { color:var(--value-text); }
+  /* 展开项 */
+  .expandable {
+    cursor:pointer;
+    color:var(--submenu-text);
+  }
+  .expandable:hover { text-decoration:underline; }
+  /* ▶符号 */
+  .arrow {
+    color:var(--arrow-color);
+    margin-right:4px;
+  }
+  /* 禁用行（disabledWhen条件不满足）：灰色不可选 */
+  /* PCI设备列表列对齐：固定像素宽度 */
+  .pci-row-label {
+    display: inline-flex;
+    align-items: center;
+    width: 100%;
+  }
+  .pci-col {
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pci-col-0 { width: 45px; }  /* SEG */
+  .pci-header .pci-col-0 { padding-left: 18px; }  /* 表头缩进对齐arrow列宽 */
+  .pci-col-1 { width: 30px; }  /* BUS */
+  .pci-col-2 { width: 30px; }  /* DEV */
+  .pci-col-3 { width: 30px; }  /* FUN */
+  .pci-col-4 { width: 50px; }  /* 厂商ID */
+  .pci-col-5 { width: 50px; }  /* 设备ID */
+  .pci-col-6 { width: 120px; } /* 链路速率 */
+  .pci-col-7 { width: 80px; }  /* 链路带宽 */
+  .pci-col-8 { width: 150px; } /* 设备类 */
+  /* ▶箭头：统一灰色、小字号、纯视觉指示，不参与交互 */
+  .submenu-arrow {
+    color:var(--label-text);
+    font-weight:bold;
+    font-size:10px;
+    cursor:pointer;
+    display:inline-block;
+    width:18px;
+    flex-shrink:0;
+    margin-left:-18px;
+    text-align:left;
+    pointer-events:none;
+  }
+  /* 弹出式选择器：蓝底白字 + 白色内边框 + 交互态青蓝底 */
+  .inline-picker {
+    position:fixed;                       /* 视口绝对定位，脱离所有层叠上下文 */
+    padding:10px;                          /* 选择框与白色边框间距10px */
+    display:flex;
+    flex-direction:column;
+    background:var(--popup-border);       /* 蓝色背景 */
+    outline:1px solid #ffffff;            /* 白色边框 */
+    outline-offset:-10px;                  /* 向内偏移10px = 内收10px */
+    z-index:200;
+    font-size:13px;
+    min-width:80px;
+    box-shadow:2px 2px 4px rgba(0,0,0,0.3);
+  }
+  .inline-option {
+    padding:2px 12px;
+    cursor:pointer;
+    color:#ffffff;                        /* 默认白字 */
+    white-space:nowrap;
+    background:transparent;               /* 默认透明底（露出蓝色背景） */
+    text-align:left;
+  }
+  .inline-option span {
+    padding: 0 2px;
+  }
+  .inline-option:hover span {
+    background:#00c8d8;                  /* 交互态：仅文字背景 */
+    color:#ffffff;
+  }
+  .inline-option.selected span {
+    background:#00c8d8;                  /* 选中态：仅文字背景 */
+    color:#ffffff;
+    font-weight:bold;
+  }
+  /* 密码输入弹窗 */
+  .password-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 300;
+  }
+  .password-box {
+    background: #0000b8;
+    outline: 2px solid #ffffff;
+    outline-offset: -10px;
+    padding: 5px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-width: 220px;
+    min-height: 110px;
+  }
+  .password-box .title {
+    color: #ffffff;
+    font-size: 14px;
+    margin-bottom: 2px;
+  }
+  .password-box .input-area {
+    background: #000000;
+    color: #ffffff;
+    border: none;
+    padding: 5px 0;
+    font-size: 13px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 8px;
+    text-align: left;
+    min-height: 24px;
+  }
+  .password-box .input-area:focus {
+    outline: none;
+    caret-color: transparent;
+  }
+  /* 右侧面板（帮助） */
+  .help-panel {
+    width:260px;
+    flex-shrink:0;
+    display:flex;
+    flex-direction:column;
+    background:var(--main-gray);
+    border-left:2px solid var(--title-bg);    /* 左侧竖线（加深） */
+    border-right:2px solid var(--title-bg);   /* 右侧竖线 */
+    border-top:2px solid var(--title-bg);     /* 顶部横线 */
+    border-bottom:2px solid var(--title-bg);  /* 底部横线 */
+  }
+  .help-header {
+    background:var(--main-gray);
+    padding:3px 8px;
+    font-size:12px;
+    font-weight:bold;
+    color:var(--label-text);
+    border-bottom:2px solid var(--title-bg);  /* 标题与内容明显分隔 */
+    height:22px;
+    line-height:16px;
+    text-align:center;
+  }
+  .help-body {
+    flex:1;
+    padding:6px 8px;
+    font-size:12px;
+    line-height:1.5;
+    color:var(--help-text);
+    overflow-y:auto;
+  }
+  /* ── 底部栏 ── */
+  .bottom-bar {
+    background:var(--footer-bg);
+    color:var(--footer-text);
+    padding:2px 10px;
+    font-size:11px;
+    display:flex;
+    justify-content:space-between;
+    height:25px;
+    align-items:center;
+    /* border-top 已移除：黑色间隙由 workspace 的 border-bottom 承担 */
+  }
+  .bottom-bar .hotkey { color:var(--footer-text); font-weight:bold; }
+  .bottom-section { display:flex; gap:16px; }
+  /* 版权 */
+  .copyright {
+    background:var(--copyright-bg);
+    color:var(--copyright-text);
+    text-align:center;
+    padding:2px;
+    font-size:10px;
+    height:15px;
+    line-height:11px;
+  }
+  /* 滚动条 */
+  ::-webkit-scrollbar { width:10px; }
+  ::-webkit-scrollbar-track { background:#999; border:1px inset #808080; }
+  ::-webkit-scrollbar-thumb { background:#666; border:1px outset #c0c0c0; }
+  /* 选中效果 */
+  ::selection { background:var(--title-bg); color:var(--value-text); }
+</style>
+</head>
+<body>
+<div id="bios-root">
+  <!-- 顶部标题 -->
+  <div class="top-bar">百敖ByoCore软件 V2.0</div>
+
+  <!-- Tab导航 -->
+  <div class="tab-strip" id="tabStrip">
+    <div class="tab active" data-tab="home">主页</div>
+    <div class="tab" data-tab="device">设备</div>
+    <div class="tab" data-tab="advanced">高级</div>
+    <div class="tab" data-tab="security">安全</div>
+    <div class="tab" data-tab="boot">启动</div>
+    <div class="tab" data-tab="exit">退出</div>
+    <div class="tab" data-tab="search">搜索</div>
+  </div>
+
+  <!-- 搜索栏 -->
+  <div id="searchBar" style="display:none;background:var(--main-gray);padding:4px 8px;border-bottom:1px solid var(--border-color);">
+    <span style="font-size:12px;font-weight:bold;color:var(--label-text);">搜索:</span>
+    <input type="text" id="searchInput" style="width:200px;padding:2px 4px;font-size:12px;font-family:inherit;border:1px inset var(--border-color);background:#c0c0c0;">
+    <button onclick="doSearch()" style="padding:2px 8px;font-size:11px;font-family:inherit;border:1px outset var(--border-color);background:#d0d0d0;cursor:pointer;">查找</button>
+  </div>
+
+  <!-- 主工作区 -->
+  <div class="workspace">
+    <!-- 左中信息面板 -->
+    <div class="info-panel">
+      <div class="info-header" id="infoHeader" style="display:none;"></div>
+      <div class="info-body" id="infoBody"></div>
+    </div>
+    <!-- 右侧帮助面板 -->
+    <div class="help-panel">
+      <div class="help-header">帮助信息</div>
+      <div class="help-body" id="helpBody">
+        <div id="helpText">主页</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 底部快捷键栏 -->
+  <div class="bottom-bar" style="position:relative;">
+    <div class="bottom-section">
+      <span><span class="hotkey">F1</span> 帮助</span>
+      <span><span class="hotkey">Esc</span> 退出</span>
+    </div>
+    <div class="bottom-section" style="position:absolute;left:50%;transform:translateX(-50%);">
+      <span><span class="hotkey">↑↓</span> 选项条目</span>
+      <span><span class="hotkey">←→</span> 选择菜单</span>
+      <span><span class="hotkey">+/-</span> 更改设置</span>
+      <span><span class="hotkey">Enter</span> 选择子菜单</span>
+    </div>
+    <div class="bottom-section">
+      <span><span class="hotkey">F9</span> 默认值</span>
+      <span><span class="hotkey">F10</span> 保存并退出</span>
+    </div>
+  </div>
+
+  <!-- 版权行 -->
+  <div class="copyright">Copyright © 1998-2025 ByoCore Software Co., Ltd.</div>
+</div>
+
+<script>
+// ==================== 数据结构 ====================
+const biosData = {
+  home: {
+    label: '主页',
+    help: '主页',
+    items: [
+      { type:'text', label:'固件厂商', value:'Byo' },
+      { type:'text', label:'固件版本', value:'百敖ByoCore软件V2.0' },
+      { type:'text', label:'发布版本', value:'U0407' },
+      { type:'text', label:'固件生成时间', value:'09/11/2025 10:20' },
+      { type:'text', label:'主板信息', value:'MBX-Z60HR200' },
+      { type:'spacer' },
+      { type:'submenu', label:'处理器信息', value:'▶', target:'cpu_info', help:'处理器信息' },
+      { type:'submenu', label:'内存信息', value:'▶', target:'memory_info', help:'内存信息' },
+      { type:'submenu', label:'系统日期和时间', value:'▶', target:'datetime', help:'系统日期和时间' },
+      { type:'submenu', label:'系统概述', value:'▶', target:'overview', help:'系统概述' },
+      { type:'spacer' },
+      { type:'text', label:'用户登录类型', value:'管理员' },
+      { type:'choice', label:'选择语言', value:'<中文>', options:['<中文>','<English>'], help:'选择语言' },
+    ]
+  },
+  device: {
+    label: '设备',
+    help: '配置和管理系统硬件设备。',
+    items: [
+      { type:'submenu', label:'SATA配置', target:'sata_config', help:'选择此选项可配置系统的SATA驱动器。' },
+      { type:'submenu', label:'显示配置', target:'display_config', help:'选择此选项可配置系统的显示设备。' },
+      { type:'submenu', label:'声卡配置', target:'audio_config', help:'选择此选项可配置系统的音频。' },
+      { type:'submenu', label:'板载网卡配置', target:'nic_config', help:'配置板载网卡设置。' },
+      { type:'submenu', label:'PCIe配置', target:'pcie_config', help:'配置PCIe控制器。' },
+      { type:'submenu', label:'USB配置', target:'usb_config', help:'配置USB端口功能。' },
+      { type:'submenu', label:'SIO配置', target:'sio_config', help:'配置SIO设备。' },
+      { type:'submenu', label:'PCI设备信息', target:'pci_info', help:'显示PCI设备列表。' }
+    ]
+  },
+  advanced: {
+    label: '高级',
+    help: '高级系统配置选项。',
+    items: [
+      { type:'submenu', label:'电源配置', target:'power_config', help:'电源配置' },
+      { type:'submenu', label:'CPU配置', target:'cpu_config', help:'显示和配置CPU参数。' },
+      { type:'submenu', label:'内存配置', target:'mem_config', help:'选择此选项查看内存配置。' },
+      { type:'submenu', label:'串口重定向', target:'serial_redirect', help:'串口重定向配置菜单。' },
+      { type:'submenu', label:'虚拟化配置', target:'virt_config', help:'配置CPU虚拟化技术。' },
+      { type:'submenu', label:'UEFI HII配置', target:'uefi_hii', help:'提供设备支持的UEFI HII(人机界面基础设施)的配置。' }
+    ]
+  },
+  security: {
+    label: '安全',
+    help: '系统安全设置。',
+    items: [
+      { type:'text', label:'管理员密码', value:'未安装' },
+      { type:'text', label:'用户密码', value:'未安装' },
+      { type:'spacer' },
+      { type:'action', label:'设置管理员密码', value:'', action:'password', help:'选择这一项来设定、更改以及删除管理员密码。密码支持字符包括字母、数字以及其它可打印字符。密码区分大小写，支持输入密码长度为到8到20。\n注意:\n输入密码时按Enter健输入空可以删除密码。密码至少包含大写字母，小写字母，数字，特殊字符四种类型中的三种。且不能设定为之前设定过的密码，五(含)次以内。\n如果启用管理员密码网络验证，进行管理员密码更改时将会进行网络认证。' },
+      { type:'action', label:'设置用户密码', value:'', action:'password', help:'选择这一项来设定、更改以及删除用户密码。密码支持字符包括字母、数字以及其它可打印字符。密码区分大小写，支持输入密码长度为8到20。\n注意:\n输入密码时按Enter健输入空可以删除密码。密码至少包含大写字母，小写字母，数字，特殊字符四种类型中的三种。且不能设定为之前设定过的密码，五(含)次以内。\n如果启用用户密码网络验证，进行用户密码更改时将会进行网络认证。' },
+      { type:'spacer' },
+      { type:'submenu', label:'硬盘密码', target:'drive_password', help:'选择此项设置硬盘密码。TCG-OPAL/ATA-SEC标识当前所使用的安全协议。使用TCG-OPAL协议的NVMe需要关闭电源才能改变安全状态。' },
+      { type:'submenu', label:'安全启动', target:'secure_boot', help:'配置安全启动选项。' },
+      { type:'submenu', label:'TCG配置', target:'tcg_config', help:'配置TCG可信计算功能。' },
+      { type:'submenu', label:'硬盘绑定', target:'drive_bind', help:'配置硬盘绑定功能。' }
+    ]
+  },
+  boot: {
+    label: '启动',
+    help: '系统启动配置。',
+    items: [
+      { type:'input', label:'用户等待时间', value:'[2]', help:'设置启动等待时间（秒）。' },
+      { type:'choice', label:'数字锁定键开机状态', value:'<打开>', options:['<关闭>','<打开>'], help:'设置开机时数字锁定键状态。' },
+      { type:'choice', label:'OPTION ROM信息', value:'<打开>', options:['<关闭>','<打开>'], help:'启用或禁用OPTION ROM信息显示。' },
+      { type:'choice', label:'禁用Windows系统', value:'<关闭>', options:['<关闭>','<打开>'], help:'启用或禁用Windows系统检测。' },
+      { type:'choice', label:'兼容支持模块', value:'<关闭>', options:['<关闭>','<打开>'], help:'兼容性支持模块。允许加载传统的操作系统。' },
+      { type:'choice', label:'启动模式', value:'<UEFI>', options:['<Legacy>','<UEFI>'], help:'选择启动模式。' },
+      { type:'choice', label:'内置SHELL', value:'<打开>', options:['<关闭>','<打开>'], help:'启用或禁用内置SHELL。' },
+      { type:'choice', label:'快速启动', value:'<关闭>', options:['<关闭>','<打开>'], help:'启用或禁用快速启动。' },
+      { type:'choice', label:'网络引导', value:'<打开>', options:['<关闭>','<打开>'], help:'启用或禁用网络引导。' },
+      { type:'input', label:'网络启动重试', value:'[8]', help:'设置网络启动重试次数。' },
+      { type:'choice', label:'网络引导IP版本', value:'<IPv4>', options:['<IPv4>','<IPv6>'], help:'选择网络引导IP版本。' },
+      { type:'submenu', label:'PCI ROM优先级', target:'pci_rom', help:'如果有多个Option ROMs (Legacy and EFI Compatible),请指定要启动的PCI Option ROM。' },
+      { type:'submenu', label:'启动管理器', target:'boot_manager', help:'管理启动设备。' },
+      { type:'submenu', label:'启动策略管理器', target:'boot_policy', help:'配置启动策略。' }
+    ]
+  },
+  exit: {
+    label: '退出',
+    help: '保存/不保存设置并退出，或加载默认设置。',
+    items: [
+      { type:'action', label:'恢复初始值', value:'<进入>', help:'恢复所有设置为初始值。' },
+      { type:'action', label:'保存退出', value:'<进入>', help:'保存当前设置并退出BIOS。' },
+      { type:'action', label:'关机', value:'<进入>', help:'关闭系统电源。' },
+      { type:'action', label:'重启', value:'<进入>', help:'重启系统。' },
+      { type:'submenu', label:'BIOS备份还原', target:'bios_backup', help:'BIOS固件备份和还原功能。' }
+    ]
+  },
+  search: {
+    label: '搜索',
+    help: '输入关键词搜索设置项。',
+    items: []
+  }
+};
+
+const subPages = {
+  cpu_info: {
+    title: '处理器信息',
+    help: '',
+    items: [
+      { type:'text', label:'CPU类型', value:'ZHAOXIN KaiXian KX-U6780A@2.7GHz' },
+      { type:'text', label:'CPU最大频率', value:'2700 MHz' },
+      { type:'text', label:'CPU核心数量', value:'8 Cores 8 Threads' },
+      { type:'text', label:'一级指令缓存大小', value:'8 * 32 KB' },
+      { type:'text', label:'一级数据缓存大小', value:'8 * 32 KB' },
+      { type:'text', label:'二级缓存大小', value:'2 * 4096 KB' },
+      { type:'text', label:'CPU ID', value:'307B1' },
+      { type:'text', label:'处理器微码补丁版本', value:'0000721F 01/06/2023' }
+    ]
+  },
+  memory_info: {
+    title: '内存信息',
+    help: '',
+    items: [
+      { type:'text', label:'当前内存速度', value:'2666 MT/s' },
+      { type:'text', label:'总内存大小', value:'8 GB' },
+      { type:'text', label:'内存插槽1', value:'厂商 : Kingston\n型号 : TF32D4U2S1HCH-8\n大小 : 8GB\n1Rx16\n类型 : UDIMM\nECC : No\n序列号 : 79162D6B' },
+      { type:'text', label:'内存插槽2', value:'N/A' }
+    ]
+  },
+  datetime: {
+    title: '系统日期和时间',
+    help: '系统日期和时间',
+    items: [
+      { type:'input', label:'日期', value:'[09/19/2026]', help:'设定日期。使用Tab键可以在日期区域切换。' },
+      { type:'input', label:'时间', value:'[15:32:49]', help:'设定时间。使用Tab键可以在时间区域切换。' }
+    ]
+  },
+  language_config: {
+    title: '选择语言',
+    help: '选择语言',
+    items: [
+      { type:'choice', label:'系统语言', value:'<中文>', options:['<中文>', '<English>'], help:'选择BIOS菜单显示语言。' }
+    ]
+  },
+  overview: {
+    title: '系统概述',
+    help: '',
+    items: [
+      { type:'text', label:'主机商标标识', value:'LIANSHUO DZ500SQ' },
+      { type:'text', label:'主机编号', value:'DM1AHGC430018' },
+      { type:'text', label:'资产管理名称', value:'TBD' },
+      { type:'text', label:'系统UUID', value:'18AB2480-E893-1025-A7CE-47D1AEE4BC0A' },
+      { type:'spacer' },
+      { type:'text', label:'UEFI版本号', value:'2.80' },
+      { type:'spacer' },
+      { type:'text', label:'芯片版本 (SOC)', value:'A2' },
+      { type:'text', label:'芯片版本 (IOE)', value:'A0' },
+      { type:'spacer' },
+      { type:'text', label:'兆芯RC版本', value:'64' },
+      { type:'text', label:'XHCI固件版本', value:'32.0.21.0' },
+      { type:'text', label:'ZX200 XHCI固件版本', value:'N/A' },
+      { type:'text', label:'兆芯UBIOS版本', value:'CX2ALL34' },
+      { type:'spacer' },
+      { type:'text', label:'以太网卡物理地址', value:'00-E0-4C-6F-39-C0' }
+    ]
+  },
+  sata_config: {
+    title: 'SATA配置',
+    help: '',
+    items: [
+      { type:'text', label:'SATA 1', value:'未检测到' },
+      { type:'text', label:'SATA 2', value:'未检测到' },
+      { type:'spacer' },
+      { type:'choice', label:'SATA 控制器', value:'<打开>', options:['<关闭>','<打开>'], key:'sata_controller', help:'选择是否支持SATA设备。' },
+      { type:'choice', label:'配置SATA为', value:'<AHCI>', options:['<IDE>','<AHCI>'], key:'sata_mode', visibleWhen:{sata_controller:'<打开>'}, help:'选择IDE或AHCI模式。注意：设备驱动支持AHCI模式取决于硬盘如何安装。改变这个设定可能引起无法从系统启动。' },
+      { type:'choice', label:'SATA速度设置', value:'<Gen3>', options:['<Gen1>','<Gen2>','<Gen3>'], visibleWhen:{sata_controller:'<打开>'}, help:'设置SATA度为Gen1/Gen2/Gen3' },
+      { type:'choice', label:'AHCI热插拔功能', value:'<关闭>', options:['<关闭>','<打开>'], visibleWhen:{sata_controller:'<打开>', sata_mode:'<AHCI>'}, help:'启用所有端口的热插拔功能。' }
+    ]
+  },
+  display_config: {
+    title: '显示配置',
+    help: '配置显卡和显示设置。',
+    items: [
+      { type:'choice', label:'多显', value:'<关闭>', options:['<关闭>','<打开>'], help:'多显打开或关闭。' },
+      { type:'choice', label:'优先显示控制器', value:'<外插显卡>', options:['<外插显卡>','<板载显卡>'], key:'primary_display', help:'选择优先使用哪个设备做视频输出' },
+      { type:'choice', label:'UMA', value:'<打开>', options:['<关闭>','<打开>'], disabledWhen:{primary_display:'<板载显卡>'}, help:'' },
+      { type:'choice', label:'板载显卡性能', value:'<正常>', options:['<正常>','<高>'], help:'' }
+    ]
+  },
+  nic_config: {
+    title: '板载网卡配置',
+    help: '配置板载网卡设置。',
+    items: [
+      { type:'choice', label:'板载网卡控制', value:'<打开>', options:['<关闭>','<打开>'], help:'启用或禁用板载网卡控制器。' },
+      { type:'choice', label:'网络唤醒', value:'<打开>', options:['<关闭>','<打开>'], help:'启用或禁用网络唤醒功能。' }
+    ]
+  },
+  usb_config: {
+    title: 'USB配置',
+    help: '配置USB端口功能。',
+    items: [
+      { type:'choice', label:'USB端口全局配置', value:'<自动>', options:['<自动>','<键鼠>','<键鼠和存储设备>','<键鼠和存储设备只读>','<键鼠和其他设备>','<键鼠与其他设备和存储设备只读>','<存储设备>','<存储设备只读>','<其他设备只读>','<其他设备和存储设备>','<其他设备和存储设备只读>','<其他设备>','<禁用>'], help:'选择此端口所支持的设备类型,比如：键鼠、存储或其他设备,其他设备包括音响设备.图像设备.智能卡.打印机，视频设备等。当它被设置成禁用时，该端口无法使用。' },
+      { type:'choice', label:'USB端口1配置(USB2.0 端口 1)', value:'<自动>', options:['<自动>','<键鼠>','<键鼠和存储设备>','<键鼠和存储设备只读>','<键鼠和其他设备>','<键鼠与其他设备和存储设备只读>','<存储设备>','<存储设备只读>','<其他设备只读>','<其他设备和存储设备>','<其他设备和存储设备只读>','<其他设备>','<禁用>'], help:'选择此端口所支持的设备类型,比如：键鼠、存储或其他设备,其他设备包括音响设备.图像设备.智能卡.打印机，视频设备等。当它被设置成禁用时，该端口无法使用。' },
+      { type:'choice', label:'USB端口2配置(USB2.0 端口 2)', value:'<自动>', options:['<自动>','<键鼠>','<键鼠和存储设备>','<键鼠和存储设备只读>','<键鼠和其他设备>','<键鼠与其他设备和存储设备只读>','<存储设备>','<存储设备只读>','<其他设备只读>','<其他设备和存储设备>','<其他设备和存储设备只读>','<其他设备>','<禁用>'], help:'选择此端口所支持的设备类型,比如：键鼠、存储或其他设备,其他设备包括音响设备.图像设备.智能卡.打印机，视频设备等。当它被设置成禁用时，该端口无法使用。' },
+      { type:'choice', label:'USB端口3配置(USB3.0 端口 1)', value:'<自动>', options:['<自动>','<键鼠>','<键鼠和存储设备>','<键鼠和存储设备只读>','<键鼠和其他设备>','<键鼠与其他设备和存储设备只读>','<存储设备>','<存储设备只读>','<其他设备只读>','<其他设备和存储设备>','<其他设备和存储设备只读>','<其他设备>','<禁用>'], help:'选择此端口所支持的设备类型,比如：键鼠、存储或其他设备,其他设备包括音响设备.图像设备.智能卡.打印机，视频设备等。当它被设置成禁用时，该端口无法使用。' },
+      { type:'choice', label:'USB端口4配置(USB3.0 端口 2)', value:'<自动>', options:['<自动>','<键鼠>','<键鼠和存储设备>','<键鼠和存储设备只读>','<键鼠和其他设备>','<键鼠与其他设备和存储设备只读>','<存储设备>','<存储设备只读>','<其他设备只读>','<其他设备和存储设备>','<其他设备和存储设备只读>','<其他设备>','<禁用>'], help:'选择此端口所支持的设备类型,比如：键鼠、存储或其他设备,其他设备包括音响设备.图像设备.智能卡.打印机，视频设备等。当它被设置成禁用时，该端口无法使用。' },
+      { type:'spacer' },
+      { type:'choice', label:'USB端口5配置(USB3.0 左下)', value:'<自动>', options:['<自动>','<键鼠>','<键鼠和存储设备>','<键鼠和存储设备只读>','<键鼠和其他设备>','<键鼠与其他设备和存储设备只读>','<存储设备>','<存储设备只读>','<其他设备只读>','<其他设备和存储设备>','<其他设备和存储设备只读>','<其他设备>','<禁用>'], help:'选择此端口所支持的设备类型,比如：键鼠、存储或其他设备,其他设备包括音响设备.图像设备.智能卡.打印机，视频设备等。当它被设置成禁用时，该端口无法使用。' },
+      { type:'choice', label:'USB端口6配置(USB3.0 左上)', value:'<自动>', options:['<自动>','<键鼠>','<键鼠和存储设备>','<键鼠和存储设备只读>','<键鼠和其他设备>','<键鼠与其他设备和存储设备只读>','<存储设备>','<存储设备只读>','<其他设备只读>','<其他设备和存储设备>','<其他设备和存储设备只读>','<其他设备>','<禁用>'], help:'选择此端口所支持的设备类型,比如：键鼠、存储或其他设备,其他设备包括音响设备.图像设备.智能卡.打印机，视频设备等。当它被设置成禁用时，该端口无法使用。' },
+      { type:'choice', label:'USB端口7配置(USB3.0 右下)', value:'<自动>', options:['<自动>','<键鼠>','<键鼠和存储设备>','<键鼠和存储设备只读>','<键鼠和其他设备>','<键鼠与其他设备和存储设备只读>','<存储设备>','<存储设备只读>','<其他设备只读>','<其他设备和存储设备>','<其他设备和存储设备只读>','<其他设备>','<禁用>'], help:'选择此端口所支持的设备类型,比如：键鼠、存储或其他设备,其他设备包括音响设备.图像设备.智能卡.打印机，视频设备等。当它被设置成禁用时，该端口无法使用。' },
+      { type:'choice', label:'USB端口8配置(USB3.0 右上)', value:'<自动>', options:['<自动>','<键鼠>','<键鼠和存储设备>','<键鼠和存储设备只读>','<键鼠和其他设备>','<键鼠与其他设备和存储设备只读>','<存储设备>','<存储设备只读>','<其他设备只读>','<其他设备和存储设备>','<其他设备和存储设备只读>','<其他设备>','<禁用>'], help:'选择此端口所支持的设备类型,比如：键鼠、存储或其他设备,其他设备包括音响设备.图像设备.智能卡.打印机，视频设备等。当它被设置成禁用时，该端口无法使用。' },
+      { type:'choice', label:'USB端口9配置(USB3.0 中下)', value:'<自动>', options:['<自动>','<键鼠>','<键鼠和存储设备>','<键鼠和存储设备只读>','<键鼠和其他设备>','<键鼠与其他设备和存储设备只读>','<存储设备>','<存储设备只读>','<其他设备只读>','<其他设备和存储设备>','<其他设备和存储设备只读>','<其他设备>','<禁用>'], help:'选择此端口所支持的设备类型,比如：键鼠、存储或其他设备,其他设备包括音响设备.图像设备.智能卡.打印机，视频设备等。当它被设置成禁用时，该端口无法使用。' },
+      { type:'choice', label:'USB端口10配置(USB3.0 中上)', value:'<自动>', options:['<自动>','<键鼠>','<键鼠和存储设备>','<键鼠和存储设备只读>','<键鼠和其他设备>','<键鼠与其他设备和存储设备只读>','<存储设备>','<存储设备只读>','<其他设备只读>','<其他设备和存储设备>','<其他设备和存储设备只读>','<其他设备>','<禁用>'], help:'选择此端口所支持的设备类型,比如：键鼠、存储或其他设备,其他设备包括音响设备.图像设备.智能卡.打印机，视频设备等。当它被设置成禁用时，该端口无法使用。' },
+      { type:'spacer' },
+      { type:'text', label:'USB设备列表', value:'' },
+      { type:'text', label:'USB 键盘  Wired USB Keyboard', value:'' },
+      { type:'text', label:'USB 鼠标  PixArt USB Optical Mouse', value:'' }
+    ]
+  },
+  audio_config: {
+    title: '声卡配置',
+    help: '配置板载声卡设置。',
+    items: [
+      { type:'choice', label:'板载声卡控制器', value:'<打开>', options:['<关闭>','<打开>'], help:'选择打开或关闭板载声卡控制器' }
+    ]
+  },
+  pcie_config: {
+    title: 'PCIe配置',
+    help: '配置PCIe控制器。',
+    items: [
+      { type:'choice', label:'PCIe PE0控制器 FOR M.2 SSD', value:'<打开>', options:['<关闭>','<打开>'], help:'使能PE2时，不能禁止PCIe PE0\n使能PE7时，不能禁止PCIe PE6' },
+      { type:'choice', label:'PCIe PE1控制器 FOR LAN', value:'<打开>', options:['<关闭>','<打开>'], help:'使能PE2时，不能禁止PCIe PE0\n使能PE7时，不能禁止PCIe PE6' },
+      { type:'choice', label:'PCIe PE4控制器 FOR PCIE X16 SLOT_1 X8', value:'<打开>', options:['<关闭>','<打开>'], help:'使能PE2时，不能禁止PCIe PE0\n使能PE7时，不能禁止PCIe PE6' },
+      { type:'choice', label:'PCIe PE5控制器 FOR PCIE X16 SLOT_2 X1', value:'<打开>', options:['<关闭>','<打开>'], help:'使能PE2时，不能禁止PCIe PE0\n使能PE7时，不能禁止PCIe PE6' }
+    ]
+  },
+  sio_config: {
+    title: 'SIO配置',
+    help: '配置SIO设备。',
+    items: [
+      { type:'choice', label:'串行端口1地址', value:'<2F8/IRQ3>', options:['<关闭>','<3F8/IRQ4>','<3E8/IRQ4>','<2F8/IRQ3>','<2E8/IRQ3>'], help:'禁用串行端口1或为其选择地址' },
+      { type:'choice', label:'串行端口2地址', value:'<2F8/IRQ3>', options:['<关闭>','<3F8/IRQ4>','<3E8/IRQ4>','<2F8/IRQ3>','<2E8/IRQ3>'], help:'禁用串行端口2或为其选择地址' },
+      { type:'spacer' },
+      { type:'choice', label:'并行端口地址', value:'<关闭>', options:['<关闭>','<378>','<278>','<3BC>'], help:'禁用端口或者选择并行端口地址' },
+      { type:'choice', label:'并行端口模式', value:'<ECP+EPP>', options:['<ECP+EPP>','<ECP>','<EPP>'], help:'' },
+      { type:'spacer' },
+      { type:'choice', label:'PS/2鼠标功能', value:'<关闭>', options:['<关闭>','<打开>'], help:'禁用或打开PS2唤醒功能' },
+      { type:'spacer' },
+      { type:'text', label:'CPU风扇速度', value:'0 RPM' },
+      { type:'text', label:'SYS风扇速度', value:'0 RPM' },
+      { type:'spacer' },
+      { type:'text', label:'CPU温度', value:'36 °C' },
+      { type:'spacer' },
+      { type:'text', label:'CPU核心电压', value:'1.1009 V' },
+      { type:'text', label:'内存电压', value:'1.2317 V' },
+      { type:'text', label:'12V', value:'12.1644 V' },
+      { type:'text', label:'5V', value:'5.0410 V' },
+      { type:'text', label:'3.3V', value:'3.4320 V' },
+      { type:'text', label:'Vbat', value:'3.0020 V' }
+    ]
+  },
+  pci_info: {
+    title: 'PCI设备信息',
+    help: '显示PCI设备信息。',
+    items: [
+      { type:'pci-row', label:'SEG BUS DEV FUN 厂商ID 设备ID 链路速率 链路带宽 设备类', value:'', noArrow:true },
+      { type:'pci-row', data:['0000','00','01','00','1D17','3604','N/A','N/A','VGA controller'], target:'pci_dev_00_01_00', help:'显示该PCI设备详细信息。' },
+      { type:'pci-row', data:['0000','00','01','01','1D17','9144','N/A','N/A','Multimedia device'], target:'pci_dev_00_01_01', help:'显示该PCI设备详细信息。' },
+      { type:'pci-row', data:['0000','00','0F','00','1D17','98E3','N/A','N/A','SATA AHCI'], target:'pci_dev_00_0f_00', help:'显示该PCI设备详细信息。' },
+      { type:'pci-row', data:['0000','00','10','00','1D17','3030','N/A','N/A','USB UHCI'], target:'pci_dev_00_10_00', help:'显示该PCI设备详细信息。' },
+      { type:'pci-row', data:['0000','00','10','01','1D17','3038','N/A','N/A','USB UHCI'], target:'pci_dev_00_10_01', help:'显示该PCI设备详细信息。' },
+      { type:'pci-row', data:['0000','00','10','07','1D17','3104','N/A','N/A','USB EHCI'], target:'pci_dev_00_10_07', help:'显示该PCI设备详细信息。' },
+      { type:'pci-row', data:['0000','00','12','00','1D17','9204','N/A','N/A','USB XHCI'], target:'pci_dev_00_12_00', help:'显示该PCI设备详细信息。' },
+      { type:'pci-row', data:['0000','00','14','00','1D17','328B','N/A','N/A','Multimedia device'], target:'pci_dev_00_14_00', help:'显示该PCI设备详细信息。' },
+      { type:'pci-row', data:['0000','01','00','00','1D57','5216','Gen3(8GT/s)','x2','NVMe'], target:'pci_dev_01_00_00', help:'显示该PCI设备详细信息。' },
+      { type:'pci-row', data:['0000','03','00','00','10EC','8168','Gen1(2.5GT/s)','x1','Ethernet controller'], target:'pci_dev_03_00_00', help:'显示该PCI设备详细信息。' }
+    ]
+  },
+  power_config: {
+    title: '电源配置',
+    help: '配置电源管理选项。',
+    items: [
+      { type:'choice', label:'ACPI睡眠状态', value:'<S3>', options:['<关闭>','<S1>','<S3>','<S1和S3>'], help:'选择在SUSPEND按钮按下后，系统将会进入的ACPI睡眠状态。' },
+      { type:'choice', label:'电源恢复后状态', value:'<关机>', options:['<关机>','<上一个状态>','<开机>'], help:'自动上电相关功能。' },
+      { type:'submenu', label:'自动上电', target:'auto_power', help:'配置自动上电时间。' }
+    ]
+  },
+  cpu_config: {
+    title: 'CPU配置',
+    help: '显示和配置CPU参数。',
+    items: [
+      { type:'choice', label:'MCA支持', value:'<打开>', options:['<关闭>','<打开>'], help:'MCA支持' },
+      { type:'choice', label:'AVX支持', value:'<打开>', options:['<关闭>','<打开>'], help:'AVX支持' }
+    ]
+  },
+  mem_config: {
+    title: '内存配置',
+    help: '配置内存运行参数。',
+    items: [
+      { type:'text', label:'内存信息', value:'' },
+      { type:'text', label:'当前内存速度', value:'2666 MT/s' },
+      { type:'text', label:'总内存大小', value:'8 GB' },
+      { type:'text', label:'内存插槽1', value:'厂商 : Kingston\n型号 : TF32D4U2S1HCH-8\n大小 : 8GB\n1Rx16\n类型 : UDIMM\nECC : No\n序列号 : 79162D6B' },
+      { type:'text', label:'内存插槽2', value:'N/A' },
+      { type:'spacer' },
+      { type:'text', label:'内存配置', value:'' },
+      { type:'choice', label:'内存时钟频率', value:'<By SPD>', options:['<By SPD>','<1200 MHz>','<1333 MHz>'], help:'内存时钟频率' },
+      { type:'choice', label:'内存快速启动', value:'<关闭>', options:['<关闭>','<打开>'], help:'内存快速启动' },
+      { type:'choice', label:'UGA共享内存', value:'<自动>', options:['<64MB>','<128MB>','<256MB>','<512MB>','<自动>'], help:'UGA共享内存' }
+    ]
+  },
+  serial_redirect: {
+    title: '串口重定向',
+    help: '配置串口重定向功能。',
+    items: [
+      { type:'text', label:'串口重定向', value:'' },
+      { type:'spacer' },
+      { type:'choice', label:'串口重定向', value:'<关闭>', options:['<关闭>','<打开>'], help:'DOS串口重定向，只支持MS-DOS 7.1及下版本，不支持Windows 98 MS-D0S。' }
+    ]
+  },
+  virt_config: {
+    title: '虚拟化配置',
+    help: '配置CPU虚拟化技术。',
+    items: [
+      { type:'choice', label:'启用IOV支持', value:'<关闭>', options:['<关闭>','<开启>'], help:'启用IOV支持' }
+    ]
+  },
+  uefi_hii: {
+    title: 'UEFI HII配置',
+    help: '配置UEFI人机界面基础设施。',
+    items: [
+      { type:'submenu', label:'Tls身份验证配置', target:'tls_auth_config', help:'Tls身份验证配置' },
+      { type:'submenu', label:'Realtek PCIe GBE Family Controller（MAC:00:00:00:00:00:00）', target:'realtek_gbe', help:'Realtek PCIe GBE Family Controller' },
+      { type:'submenu', label:'虚拟局域网配置（MAC:00:00:00:00:00:00）', target:'vlan_config', help:'虚拟局域网配置' },
+      { type:'submenu', label:'IPv4网络配置（MAC:00:00:00:00:00:00）', target:'ipv4_config', help:'IPv4网络配置' },
+      { type:'submenu', label:'IPv6网络配置（MAC:00:00:00:00:00:00）', target:'ipv6_config', help:'IPv6网络配置' }
+    ]
+  },
+  tls_auth_config: { title:'Tls身份验证配置', help:'Tls身份验证配置', items:[] },
+  realtek_gbe: { title:'Realtek PCIe GBE Family Controller', help:'Realtek PCIe GBE Family Controller', items:[] },
+  vlan_config: { title:'虚拟局域网配置', help:'虚拟局域网配置', items:[] },
+  ipv4_config: { title:'IPv4网络配置', help:'IPv4网络配置', items:[] },
+  ipv6_config: { title:'IPv6网络配置', help:'IPv6网络配置', items:[] },
+  drive_select: {
+    title: '选择驱动器',
+    help: '选择此项设置硬盘密码。TCG-OPAL/ATA-SEC标识当前所使用的安全协议。使用TCG-OPAL协议的NVMe需要关闭电源才能改变安全状态。',
+    items: [
+      { type:'submenu', label:'NVMe (PCI1-0-0): FORESEE XP1000FZ5G6', target:'drive_password', help:'设置硬盘密码。' }
+    ]
+  },
+  drive_password: {
+    title: '硬盘密码',
+    help: '选择此项设置硬盘密码。TCG-OPAL/ATA-SEC标识当前所使用的安全协议。使用TCG-OPAL协议的NVMe需要关闭电源才能改变安全状态。',
+    items: [
+      { type:'choice', label:'设置硬盘密码的哈希算法', value:'<SHA-256 Hash>', options:['<SHA-256 Hash>','<SM3 Hash>'], help:'' },
+      { type:'choice', label:'安全冻结', value:'<启用>', options:['<启用>'], help:'' },
+      { type:'spacer' },
+      { type:'text', label:'选择驱动器', value:'' },
+      { type:'submenu', label:'NVMe (PCI1-0-0) : SCY C3000 (ATA-SEC)', value:'▶', target:'drive_select', help:'' }
+    ]
+  },
+  auto_power: {
+    title: '自动上电',
+    help: '配置自动上电时间。',
+    items: [
+      { type:'choice', label:'时钟唤醒', value:'<关闭>', options:['<一次>','<每天>','<每周>','<用户自定义>','<分钟>','<秒>','<关闭>'], help:'选择是否打开时钟唤醒功能，可以允许您的系统在一个特定的年月日唤醒。注意:设定的值有可能被操作系统覆盖掉。' },
+      { type:'input', label:'时钟时间（时：分：秒）', value:'', help:'待补' },
+      { type:'input', label:'时钟日期（月/日/年）', value:'', help:'待补' },
+      { type:'choice', label:'每周唤醒日期', value:'', options:[], help:'待补' },
+      { type:'submenu', label:'用户自定义唤醒', target:'', help:'待补' }
+    ]
+  },
+  secure_boot: {
+    title: '安全启动',
+    help: '配置安全启动选项。',
+    items: [
+      { type:'text', label:'系统模式', value:'安全启动' },
+      { type:'choice', label:'设定模式', value:'<关闭>', options:['<关闭>','<打开>'], help:'用户模式与部署模式切换。' },
+      { type:'action', label:'恢复出厂设置', value:'<进入>', help:'恢复安全启动出厂设置。' },
+      { type:'action', label:'重置为设定模式', value:'<进入>', help:'重置为设定模式。' },
+      { type:'action', label:'进入审计模式', value:'<进入>', help:'进入审计模式。' },
+      { type:'action', label:'进入部署模式', value:'<进入>', help:'进入部署模式。' },
+      { type:'submenu', label:'安全设置项管理', target:'secure_items', help:'管理安全启动设置项。' }
+    ]
+  },
+  boot_manager: {
+    title: 'UEFI 硬盘驱动器',
+    help: '上下光标键选择设备，<+>和<->移动设备至较高或较低值。',
+    items: [
+      { type:'text', label:'Kylin Linux(UEFI_NVME (PCI1-0-0): FUKSIZE XP1000PZ56G)', value:'' }
+    ]
+  },
+  boot_policy: {
+    title: '启动策略管理器',
+    help: '启动策略管理器',
+    items: [
+      { type:'input', label:'网络启动等待时间', value:'[0]', help:'设置网络启动等待时间。' },
+      { type:'input', label:'介质检测次数', value:'[1]', help:'设置介质检测次数。' },
+      { type:'submenu', label:'禁止启动项类型', target:'forbid_type', help:'管理禁止启动项类型。' },
+      { type:'submenu', label:'禁止启动项', target:'forbid_item', help:'管理禁止启动项。' },
+      { type:'submenu', label:'添加启动项', target:'add_boot', help:'添加新的启动项。' },
+      { type:'submenu', label:'删除启动项', target:'del_boot', help:'删除已有启动项。' },
+      { type:'choice', label:'固定启动项顺序', value:'<关闭>', options:['<关闭>','<打开>'], help:'启用或禁用固定启动项顺序。' },
+      { type:'spacer' },
+      { type:'text', label:'UEFI模式下的开机顺序', value:'' },
+      { type:'submenu', label:'UEFI 硬盘驱动器', target:'boot_manager', help:'管理UEFI硬盘启动顺序。上下光标键选择设备，<+>和<->移动设备至较高或较低值。' },
+      { type:'submenu', label:'UEFI CD/DVD光驱', target:'uefi_cdrom', help:'管理UEFI CD/DVD启动顺序。' },
+      { type:'submenu', label:'UEFI USB闪存驱动器/USB硬盘', target:'uefi_usb', help:'管理UEFI USB启动顺序。' },
+      { type:'submenu', label:'UEFI USB CD/DVD光驱', target:'uefi_usbcd', help:'管理UEFI USB CD/DVD启动顺序。' },
+      { type:'submenu', label:'UEFI 网络设备', target:'uefi_net', help:'上下光标键选择设备，<+>和<->移动设备至较高或较低值。' },
+      { type:'submenu', label:'UEFI 其它', target:'uefi_other', help:'管理UEFI其它启动顺序。' }
+    ]
+  },
+  pci_rom: {
+    title: 'PCI ROM优先级',
+    help: '如果有多个Option ROMs (Legacy and EFI Compatible),请指定要启动的PCI Option ROM。',
+    items: [
+      { type:'text', label:'说明', value:'如果有多个Option ROMs (Legacy and EFI Compatible),请指定要启动的PCI Option ROM。' }
+    ]
+  },
+  forbid_type: {
+    title: '禁止启动项类型',
+    help: '管理禁止启动项类型。',
+    items: [
+      { type:'text', label:'', value:'管理禁止启动项类型。' }
+    ]
+  },
+  forbid_item: {
+    title: '禁止启动项',
+    help: '管理禁止启动项。',
+    items: [
+      { type:'text', label:'Kylin Linux UEFI NVME (PCI1-0-0): FORESEE XP1000PZ56G', value:'' },
+      { type:'text', label:'UEFI J23: Realtek PCIe GBE Family Controller PXE IPv4', value:'' },
+      { type:'text', label:'UEFI J23: Realtek PCIe GBE Family Controller HTTP IPv4', value:'' },
+      { type:'text', label:'Internal EFI Shell', value:'' }
+    ]
+  },
+  add_boot: {
+    title: '添加启动项',
+    help: '添加新的启动项。',
+    items: [
+      { type:'input', label:'启动项名称', value:'[输入名称]', help:'输入启动项名称。' },
+      { type:'input', label:'启动项路径', value:'[输入路径]', help:'输入启动项路径。' }
+    ]
+  },
+  del_boot: {
+    title: '删除启动项',
+    help: '删除已有启动项。',
+    items: [
+      { type:'text', label:'', value:'当前无可删除的启动项。' }
+    ]
+  },
+  uefi_net: {
+    title: 'UEFI 网络设备',
+    help: '上下光标键选择设备，<+>和<->移动设备至较高或较低值。',
+    items: [
+      { type:'text', label:'UEFI J22', value:'Realtek PCIe GBE Family Controller PXE IPv4' },
+      { type:'text', label:'UEFI J23', value:'Realtek PCIe GBE Family Controller HTTP IPv4' }
+    ]
+  },
+  uefi_cdrom: {
+    title: 'UEFI CD/DVD光驱',
+    help: '管理UEFI CD/DVD启动顺序。',
+    items: []
+  },
+  uefi_usb: {
+    title: 'UEFI USB闪存驱动器/USB硬盘',
+    help: '管理UEFI USB启动顺序。',
+    items: []
+  },
+  uefi_usbcd: {
+    title: 'UEFI USB CD/DVD光驱',
+    help: '管理UEFI USB CD/DVD启动顺序。',
+    items: []
+  },
+  uefi_other: {
+    title: 'UEFI 其它',
+    help: '管理UEFI其它启动顺序。',
+    items: []
+  },
+  secure_items: {
+    title: '安全设置项管理',
+    help: '管理安全启动设置项。',
+    items: [
+      { type:'text', label:'', value:'安全设置项管理功能。' }
+    ]
+  },
+  tcg_config: {
+    title: 'TCG配置',
+    help: '配置TCG可信计算功能。',
+    items: [
+      { type:'choice', label:'TCG功能', value:'<打开>', options:['<关闭>','<打开>'], help:'启用或禁用TCG可信计算功能。' }
+    ]
+  },
+  drive_bind: {
+    title: '硬盘绑定',
+    help: '配置硬盘绑定功能。',
+    items: [
+      { type:'text', label:'当前启动硬盘', value:'未绑定' },
+      { type:'choice', label:'硬盘绑定', value:'<解除绑定>', options:['<解除绑定>'], help:'当前硬盘绑定状态。' }
+    ]
+  },
+  bios_backup: {
+    title: '备份还原',
+    help: 'BIOS固件备份和还原功能。',
+    items: [
+      { type:'submenu', label:'BIOS备份', target:'bios_backup_detail', help:'执行BIOS固件备份。' },
+      { type:'submenu', label:'BIOS还原', target:'bios_restore', help:'执行BIOS固件还原。' }
+    ]
+  },
+  bios_backup_detail: {
+    title: 'BIOS备份',
+    help: '执行BIOS固件备份。',
+    items: [
+      { type:'action', label:'开始备份', value:'<进入>', help:'开始BIOS固件备份。' }
+    ]
+  },
+  bios_restore: {
+    title: 'BIOS还原',
+    help: '执行BIOS固件还原。',
+    items: [
+      { type:'text', label:'NAME', value:'FORESEE XP1000F256G' }
+    ]
+  },
+  // ===== PCI设备三级子页面（frame_0036~0040数据提取） =====
+  pci_dev_00_01_00: {
+    title: 'Bus: Device: Fun = 00: 01: 00',
+    help: '显示该PCI设备详细信息。',
+    items: [
+      { type:'text', label:'厂商号(Vendor ID)', value:'1D17' },
+      { type:'text', label:'设备号(Device ID)', value:'3604' },
+      { type:'text', label:'状态(Status)', value:'0010' },
+      { type:'text', label:'命令(Command)', value:'0007' },
+      { type:'text', label:'类型(Class)', value:'Display controller - VGA controller' },
+      { type:'text', label:'版本号(Revision ID)', value:'01' },
+      { type:'text', label:'内置自检(BIST)', value:'Incapable' },
+      { type:'text', label:'标头类型(Header Type)', value:'00, Single function, PCI device' },
+      { type:'text', label:'延迟定时器(Latency Timer)', value:'00' },
+      { type:'text', label:'缓存线大小(Cache Line Size)', value:'10' },
+      { type:'text', label:'中断引脚(Interrupt Pin)', value:'N/A' },
+      { type:'text', label:'中断线(Interrupt Line)', value:'N/A' },
+      { type:'spacer' },
+      { type:'text', label:'基地址寄存器[0] (Bar [0])', value:'[MEM32]:C0200000\n[Prefetchable]:No\n[Size]:00001000\n[Limit]:C0200FFF' },
+      { type:'text', label:'基地址寄存器[1] (Bar [1])', value:'[MEM32]:C0204000\n[Prefetchable]:No\n[Size]:00000200\n[Limit]:C02041FF' },
+      { type:'spacer' },
+      { type:'text', label:'扩展ROM基地址寄存器(Expansion Rom BAR)', value:'N/A' },
+      { type:'text', label:'最大链路带宽(Max Link Width)', value:'N/A' },
+      { type:'text', label:'最大链路速率(Max Link Speed)', value:'N/A' },
+      { type:'text', label:'链路带宽(Link Width)', value:'N/A' },
+      { type:'text', label:'链路速率(Link Speed)', value:'N/A' }
+    ]
+  },
+  pci_dev_00_01_01: {
+    title: 'Bus: Device: Fun = 00: 01: 01',
+    help: '显示该PCI设备详细信息。',
+    items: [
+      { type:'text', label:'厂商号(Vendor ID)', value:'1D17' },
+      { type:'text', label:'设备号(Device ID)', value:'9144' },
+      { type:'text', label:'状态(Status)', value:'0010' },
+      { type:'text', label:'命令(Command)', value:'0006' },
+      { type:'text', label:'类型(Class)', value:'Multimedia device - Audio device' },
+      { type:'text', label:'版本号(Revision ID)', value:'01' },
+      { type:'text', label:'内置自检(BIST)', value:'Incapable' },
+      { type:'text', label:'标头类型(Header Type)', value:'00, Single function, PCI device' },
+      { type:'text', label:'延迟定时器(Latency Timer)', value:'00' },
+      { type:'text', label:'缓存线大小(Cache Line Size)', value:'10' },
+      { type:'text', label:'中断引脚(Interrupt Pin)', value:'N/A' },
+      { type:'text', label:'中断线(Interrupt Line)', value:'N/A' },
+      { type:'spacer' },
+      { type:'text', label:'基地址寄存器[0] (Bar [0])', value:'[MEM32]:C0206000\n[Prefetchable]:No\n[Size]:00002000\n[Limit]:C0207FFF' },
+      { type:'spacer' },
+      { type:'text', label:'扩展ROM基地址寄存器(Expansion Rom BAR)', value:'N/A' },
+      { type:'text', label:'最大链路带宽(Max Link Width)', value:'N/A' },
+      { type:'text', label:'最大链路速率(Max Link Speed)', value:'N/A' },
+      { type:'text', label:'链路带宽(Link Width)', value:'N/A' },
+      { type:'text', label:'链路速率(Link Speed)', value:'N/A' }
+    ]
+  },
+  pci_dev_00_0f_00: {
+    title: 'Bus: Device: Fun = 00: 0F: 00',
+    help: '显示该PCI设备详细信息。',
+    items: [
+      { type:'text', label:'厂商号(Vendor ID)', value:'1D17' },
+      { type:'text', label:'设备号(Device ID)', value:'98E3' },
+      { type:'text', label:'状态(Status)', value:'0290' },
+      { type:'text', label:'命令(Command)', value:'0007' },
+      { type:'text', label:'类型(Class)', value:'Mass Storage Controller - Serial ATA controller - AHCI' },
+      { type:'text', label:'版本号(Revision ID)', value:'01' },
+      { type:'text', label:'内置自检(BIST)', value:'Incapable' },
+      { type:'text', label:'标头类型(Header Type)', value:'00, Single function, PCI device' },
+      { type:'text', label:'延迟定时器(Latency Timer)', value:'20' },
+      { type:'text', label:'缓存线大小(Cache Line Size)', value:'10' },
+      { type:'text', label:'中断引脚(Interrupt Pin)', value:'N/A' },
+      { type:'text', label:'中断线(Interrupt Line)', value:'N/A' },
+      { type:'spacer' },
+      { type:'text', label:'基地址寄存器[2] (Bar [2])', value:'[MEM32]:C020C000\n[Prefetchable]:No\n[Size]:00000040\n[Limit]:C020C03F' },
+      { type:'text', label:'基地址寄存器[3] (Bar [3])', value:'[MEM32]:C020D000\n[Prefetchable]:No\n[Size]:00000010\n[Limit]:C020D00F' },
+      { type:'text', label:'基地址寄存器[4] (Bar [4])', value:'[I/O]:2040\n[Size]:0020\n[Limit]:205F' },
+      { type:'text', label:'基地址寄存器[5] (Bar [5])', value:'[MEM32]:C0208000\n[Prefetchable]:No\n[Size]:00002000\n[Limit]:C0209FFF' },
+      { type:'spacer' },
+      { type:'text', label:'扩展ROM基地址寄存器(Expansion Rom BAR)', value:'N/A' },
+      { type:'text', label:'最大链路带宽(Max Link Width)', value:'N/A' },
+      { type:'text', label:'最大链路速率(Max Link Speed)', value:'N/A' },
+      { type:'text', label:'链路带宽(Link Width)', value:'N/A' },
+      { type:'text', label:'链路速率(Link Speed)', value:'N/A' }
+    ]
+  },
+  pci_dev_00_10_00: {
+    title: 'Bus: Device: Fun = 00: 10: 00',
+    help: '显示该PCI设备详细信息。',
+    items: [
+      { type:'text', label:'厂商号(Vendor ID)', value:'1D17' },
+      { type:'text', label:'设备号(Device ID)', value:'3030' },
+      { type:'text', label:'状态(Status)', value:'0210' },
+      { type:'text', label:'命令(Command)', value:'0005' },
+      { type:'text', label:'类型(Class)', value:'Serial Bus Controllers - USB - UHCI' },
+      { type:'text', label:'版本号(Revision ID)', value:'A0' },
+      { type:'text', label:'内置自检(BIST)', value:'Incapable' },
+      { type:'text', label:'标头类型(Header Type)', value:'00, Multi-function, PCI device' },
+      { type:'text', label:'延迟定时器(Latency Timer)', value:'00' },
+      { type:'text', label:'缓存线大小(Cache Line Size)', value:'10' },
+      { type:'text', label:'中断引脚(Interrupt Pin)', value:'N/A' },
+      { type:'text', label:'中断线(Interrupt Line)', value:'N/A' },
+      { type:'spacer' },
+      { type:'text', label:'基地址寄存器[4] (Bar [4])', value:'[I/O]:2020\n[Size]:0020\n[Limit]:203F' },
+      { type:'spacer' },
+      { type:'text', label:'扩展ROM基地址寄存器(Expansion Rom BAR)', value:'N/A' },
+      { type:'text', label:'最大链路带宽(Max Link Width)', value:'N/A' },
+      { type:'text', label:'最大链路速率(Max Link Speed)', value:'N/A' },
+      { type:'text', label:'链路带宽(Link Width)', value:'N/A' },
+      { type:'text', label:'链路速率(Link Speed)', value:'N/A' }
+    ]
+  },
+  pci_dev_00_10_01: {
+    title: 'Bus: Device: Fun = 00: 10: 01',
+    help: '显示该PCI设备详细信息。',
+    items: [
+      { type:'text', label:'厂商号(Vendor ID)', value:'1D17' },
+      { type:'text', label:'设备号(Device ID)', value:'3038' },
+      { type:'text', label:'状态(Status)', value:'0210' },
+      { type:'text', label:'命令(Command)', value:'0015' },
+      { type:'text', label:'类型(Class)', value:'Serial Bus Controllers - USB - UHCI' },
+      { type:'text', label:'版本号(Revision ID)', value:'A0' },
+      { type:'text', label:'内置自检(BIST)', value:'Incapable' },
+      { type:'text', label:'标头类型(Header Type)', value:'00, Multi-function, PCI device' },
+      { type:'text', label:'延迟定时器(Latency Timer)', value:'00' },
+      { type:'text', label:'缓存线大小(Cache Line Size)', value:'10' },
+      { type:'text', label:'中断引脚(Interrupt Pin)', value:'N/A' },
+      { type:'text', label:'中断线(Interrupt Line)', value:'N/A' },
+      { type:'spacer' },
+      { type:'text', label:'基地址寄存器[4] (Bar [4])', value:'[I/O]:2000\n[Size]:0020\n[Limit]:201F' },
+      { type:'spacer' },
+      { type:'text', label:'扩展ROM基地址寄存器(Expansion Rom BAR)', value:'N/A' },
+      { type:'text', label:'最大链路带宽(Max Link Width)', value:'N/A' },
+      { type:'text', label:'最大链路速率(Max Link Speed)', value:'N/A' },
+      { type:'text', label:'链路带宽(Link Width)', value:'N/A' },
+      { type:'text', label:'链路速率(Link Speed)', value:'N/A' }
+    ]
+  },
+  pci_dev_00_10_07: {
+    title: 'Bus: Device: Fun = 00: 10: 07',
+    help: '显示该PCI设备详细信息。',
+    items: [
+      { type:'text', label:'厂商号(Vendor ID)', value:'1D17' },
+      { type:'text', label:'设备号(Device ID)', value:'3104' },
+      { type:'text', label:'状态(Status)', value:'0210' },
+      { type:'text', label:'命令(Command)', value:'0006' },
+      { type:'text', label:'类型(Class)', value:'Serial Bus Controllers - USB - EHCI' },
+      { type:'text', label:'版本号(Revision ID)', value:'A0' },
+      { type:'text', label:'内置自检(BIST)', value:'Incapable' },
+      { type:'text', label:'标头类型(Header Type)', value:'00, Single function, PCI device' },
+      { type:'text', label:'延迟定时器(Latency Timer)', value:'00' },
+      { type:'text', label:'缓存线大小(Cache Line Size)', value:'10' },
+      { type:'text', label:'中断引脚(Interrupt Pin)', value:'N/A' },
+      { type:'text', label:'中断线(Interrupt Line)', value:'N/A' },
+      { type:'spacer' },
+      { type:'text', label:'基地址寄存器[0] (Bar [0])', value:'[MEM32]:C020A000\n[Prefetchable]:No\n[Size]:00000400\n[Limit]:C020A3FF' },
+      { type:'spacer' },
+      { type:'text', label:'扩展ROM基地址寄存器(Expansion Rom BAR)', value:'N/A' },
+      { type:'text', label:'最大链路带宽(Max Link Width)', value:'N/A' },
+      { type:'text', label:'最大链路速率(Max Link Speed)', value:'N/A' },
+      { type:'text', label:'链路带宽(Link Width)', value:'N/A' },
+      { type:'text', label:'链路速率(Link Speed)', value:'N/A' }
+    ]
+  },
+  pci_dev_00_12_00: {
+    title: 'Bus: Device: Fun = 00: 12: 00',
+    help: '显示该PCI设备详细信息。',
+    items: [
+      { type:'text', label:'厂商号(Vendor ID)', value:'1D17' },
+      { type:'text', label:'设备号(Device ID)', value:'9204' },
+      { type:'text', label:'状态(Status)', value:'0290' },
+      { type:'text', label:'命令(Command)', value:'0006' },
+      { type:'text', label:'类型(Class)', value:'Serial Bus Controllers - USB - XHCI' },
+      { type:'text', label:'版本号(Revision ID)', value:'01' },
+      { type:'text', label:'内置自检(BIST)', value:'Incapable' },
+      { type:'text', label:'标头类型(Header Type)', value:'00, Single function, PCI device' },
+      { type:'text', label:'延迟定时器(Latency Timer)', value:'00' },
+      { type:'text', label:'缓存线大小(Cache Line Size)', value:'10' },
+      { type:'text', label:'中断引脚(Interrupt Pin)', value:'N/A' },
+      { type:'text', label:'中断线(Interrupt Line)', value:'N/A' },
+      { type:'spacer' },
+      { type:'text', label:'基地址寄存器[0] (Bar [0])', value:'[MEM32]:C0210000\n[Prefetchable]:No\n[Size]:00001000\n[Limit]:C0210FFF' },
+      { type:'spacer' },
+      { type:'text', label:'扩展ROM基地址寄存器(Expansion Rom BAR)', value:'N/A' },
+      { type:'text', label:'最大链路带宽(Max Link Width)', value:'N/A' },
+      { type:'text', label:'最大链路速率(Max Link Speed)', value:'N/A' },
+      { type:'text', label:'链路带宽(Link Width)', value:'N/A' },
+      { type:'text', label:'链路速率(Link Speed)', value:'N/A' }
+    ]
+  },
+  pci_dev_00_14_00: {
+    title: 'Bus: Device: Fun = 00: 14: 00',
+    help: '显示该PCI设备详细信息。',
+    items: [
+      { type:'text', label:'厂商号(Vendor ID)', value:'1D17' },
+      { type:'text', label:'设备号(Device ID)', value:'328B' },
+      { type:'text', label:'状态(Status)', value:'0010' },
+      { type:'text', label:'命令(Command)', value:'0006' },
+      { type:'text', label:'类型(Class)', value:'Multimedia device - Mixed mode device' },
+      { type:'text', label:'版本号(Revision ID)', value:'20' },
+      { type:'text', label:'内置自检(BIST)', value:'Incapable' },
+      { type:'text', label:'标头类型(Header Type)', value:'00, Single function, PCI device' },
+      { type:'text', label:'延迟定时器(Latency Timer)', value:'00' },
+      { type:'text', label:'缓存线大小(Cache Line Size)', value:'10' },
+      { type:'text', label:'中断引脚(Interrupt Pin)', value:'N/A' },
+      { type:'text', label:'中断线(Interrupt Line)', value:'N/A' },
+      { type:'spacer' },
+      { type:'text', label:'基地址寄存器[0] (Bar [0])', value:'[MEM64]:00000000C0290000\n[Prefetchable]:No\n[Size]:0000000000004000\n[Limit]:00000000C02C3FFF' },
+      { type:'spacer' },
+      { type:'text', label:'扩展ROM基地址寄存器(Expansion Rom BAR)', value:'N/A' },
+      { type:'text', label:'最大链路带宽(Max Link Width)', value:'N/A' },
+      { type:'text', label:'最大链路速率(Max Link Speed)', value:'N/A' },
+      { type:'text', label:'链路带宽(Link Width)', value:'N/A' },
+      { type:'text', label:'链路速率(Link Speed)', value:'N/A' }
+    ]
+  },
+  pci_dev_01_00_00: {
+    title: 'Bus: Device: Fun = 01: 00: 00',
+    help: '显示该PCI设备详细信息。',
+    items: [
+      { type:'text', label:'厂商号(Vendor ID)', value:'1D57' },
+      { type:'text', label:'设备号(Device ID)', value:'5216' },
+      { type:'text', label:'状态(Status)', value:'0010' },
+      { type:'text', label:'命令(Command)', value:'0007' },
+      { type:'text', label:'类型(Class)', value:'Mass Storage Controller - NVMe' },
+      { type:'text', label:'版本号(Revision ID)', value:'01' },
+      { type:'text', label:'内置自检(BIST)', value:'Incapable' },
+      { type:'text', label:'标头类型(Header Type)', value:'00, Single function, PCI device' },
+      { type:'text', label:'延迟定时器(Latency Timer)', value:'00' },
+      { type:'text', label:'缓存线大小(Cache Line Size)', value:'10' },
+      { type:'text', label:'中断引脚(Interrupt Pin)', value:'N/A' },
+      { type:'text', label:'中断线(Interrupt Line)', value:'N/A' },
+      { type:'spacer' },
+      { type:'text', label:'基地址寄存器[0] (Bar [0])', value:'[MEM64]:00000000C0300000\n[Prefetchable]:No\n[Size]:0000000000002000\n[Limit]:00000000C0301FFF' },
+      { type:'spacer' },
+      { type:'text', label:'扩展ROM基地址寄存器(Expansion Rom BAR)', value:'N/A' },
+      { type:'text', label:'最大链路带宽(Max Link Width)', value:'x4' },
+      { type:'text', label:'最大链路速率(Max Link Speed)', value:'Gen3(8GT/s)' },
+      { type:'text', label:'链路带宽(Link Width)', value:'x2' },
+      { type:'text', label:'链路速率(Link Speed)', value:'Gen3(8GT/s)' }
+    ]
+  },
+  pci_dev_03_00_00: {
+    title: 'Bus: Device: Fun = 03: 00: 00',
+    help: '显示该PCI设备详细信息。',
+    items: [
+      { type:'text', label:'厂商号(Vendor ID)', value:'10EC' },
+      { type:'text', label:'设备号(Device ID)', value:'8168' },
+      { type:'text', label:'状态(Status)', value:'0010' },
+      { type:'text', label:'命令(Command)', value:'0007' },
+      { type:'text', label:'类型(Class)', value:'Network controller - Ethernet controller' },
+      { type:'text', label:'版本号(Revision ID)', value:'06' },
+      { type:'text', label:'内置自检(BIST)', value:'Incapable' },
+      { type:'text', label:'标头类型(Header Type)', value:'00, Single function, PCI device' },
+      { type:'text', label:'延迟定时器(Latency Timer)', value:'00' },
+      { type:'text', label:'缓存线大小(Cache Line Size)', value:'10' },
+      { type:'text', label:'中断引脚(Interrupt Pin)', value:'N/A' },
+      { type:'text', label:'中断线(Interrupt Line)', value:'N/A' },
+      { type:'spacer' },
+      { type:'text', label:'基地址寄存器[0] (Bar [0])', value:'[MEM32]:C0280000\n[Prefetchable]:No\n[Size]:00000100\n[Limit]:C02800FF' },
+      { type:'text', label:'基地址寄存器[2] (Bar [2])', value:'[I/O]:1000\n[Size]:0020\n[Limit]:101F' },
+      { type:'text', label:'基地址寄存器[3] (Bar [3])', value:'[MEM32]:C0281000\n[Prefetchable]:No\n[Size]:00001000\n[Limit]:C0281FFF' },
+      { type:'spacer' },
+      { type:'text', label:'扩展ROM基地址寄存器(Expansion Rom BAR)', value:'N/A' },
+      { type:'text', label:'最大链路带宽(Max Link Width)', value:'x1' },
+      { type:'text', label:'最大链路速率(Max Link Speed)', value:'Gen1(2.5GT/s)' },
+      { type:'text', label:'链路带宽(Link Width)', value:'x1' },
+      { type:'text', label:'链路速率(Link Speed)', value:'Gen1(2.5GT/s)' }
+    ]
+  }
+};
+
+// ==================== 状态 ====================
+let currentTab = 'home';          // 当前Tab（顶部导航）
+let currentRenderedPage = 'home'; // 当前实际渲染的页面（可能为子页面）
+let historyStack = [];
+let focusedRowIdx = 0;
+let actionRows = []; // 当前页可交互行索引
+let activePicker = null; // 当前打开的弹出选择器
+
+// ==================== Tab显示控制 ====================
+function updateTabVisibility(pageName) {
+  const allTabs = document.querySelectorAll('.tab');
+  if (biosData[pageName]) {
+    // 一级页面：所有Tab恢复可见
+    allTabs.forEach(t => {
+      t.style.visibility = '';
+      t.style.opacity = '';
+    });
+  } else if (subPages[pageName]) {
+    // 子页面：只显示所属父Tab，其他Tab隐藏但保留占位（位置不变）
+    const parentTab = findParentTab(pageName);
+    allTabs.forEach(t => {
+      if (t.dataset.tab === parentTab) {
+        t.style.visibility = '';
+        t.style.opacity = '';
+        t.classList.add('active');
+      } else {
+        t.style.visibility = 'hidden';
+        t.style.opacity = '0';
+      }
+    });
+  }
+}
+
+function findParentTab(subPageName) {
+  // 遍历biosData查找哪个一级页面包含指向该子页面的submenu/pci-row
+  for (const [tabName, tabData] of Object.entries(biosData)) {
+    if (tabData.items) {
+      for (const item of tabData.items) {
+        if ((item.type === 'submenu' || item.type === 'pci-row') && item.target === subPageName) {
+          return tabName;
+        }
+      }
+    }
+  }
+  // 三级子页面：在subPages中查找哪个子页面包含指向该三级页面的submenu/pci-row
+  for (const [pageName, pageData] of Object.entries(subPages)) {
+    if (pageData.items) {
+      for (const item of pageData.items) {
+        if ((item.type === 'submenu' || item.type === 'pci-row') && item.target === subPageName) {
+          // 递归查找该子页面的父Tab
+          return findParentTab(pageName);
+        }
+      }
+    }
+  }
+  return 'home'; // fallback
+}
+
+// ==================== Tab切换 ====================
+function switchTab(tabName) {
+  if (tabName === 'search') {
+    document.getElementById('searchBar').style.display = 'flex';
+    document.getElementById('searchInput').focus();
+    return;
+  }
+  document.getElementById('searchBar').style.display = 'none';
+  currentTab = tabName;
+  historyStack = [];
+  // Tab样式更新
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.tab === tabName);
+  });
+  renderPage(tabName);
+}
+
+// Tab点击事件
+// ==================== Tab点击事件 ====================
+document.getElementById('tabStrip').addEventListener('click', (e) => {
+  if (e.target.classList.contains('tab')) {
+    const tabName = e.target.dataset.tab;
+    if (tabName) switchTab(tabName);
+  }
+});
+
+// ==================== 获取当前页可交互行 ====================
+function getActionItems(pageName) {
+  const data = subPages[pageName] || biosData[pageName];
+  if (!data || !data.items) return [];
+  return data.items.filter(item =>
+    item.type === 'choice' || item.type === 'input' ||
+    item.type === 'action' || item.type === 'submenu'
+  );
+}
+
+function getActionItemCount(pageName) {
+  return getActionItems(pageName).length;
+}
+
+// ==================== 激活行焦点 ====================
+function focusRow(idx) {
+  const rows = document.querySelectorAll('#infoBody .info-row');
+  rows.forEach((r, i) => {
+    r.classList.toggle('focused', i === idx);
+  });
+  if (idx >= 0 && idx < rows.length) {
+    rows[idx].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+// ==================== 行操作 ====================
+function getFocusedItem() {
+  const rows = document.querySelectorAll('#infoBody .info-row');
+  const row = rows[focusedRowIdx];
+  if (!row) return null;
+  const idx = parseInt(row.dataset.idx);
+  const data = subPages[currentRenderedPage] || biosData[currentRenderedPage];
+  if (!data || !data.items) return null;
+  return data.items[idx];
+}
+
+function getRenderedData() {
+  return subPages[currentRenderedPage] || biosData[currentRenderedPage];
+}
+
+function activateFocusedRow() {
+  const item = getFocusedItem();
+  if (!item) return;
+
+  if (item.type === 'choice') {
+    // 展开行内选择器
+    const rows = document.querySelectorAll('#infoBody .info-row');
+    const row = rows[focusedRowIdx];
+    const valEl = row.querySelector('.info-value');
+    if (valEl) {
+      openInlinePicker(valEl, item.options, item.value, (newVal) => {
+        item.value = newVal;
+        valEl.textContent = newVal;
+        valEl.dataset.current = newVal;
+      });
+    }
+  } else if (item.type === 'submenu' || item.type === 'pci-row') {
+    if (item.target) {
+      historyStack.push(currentRenderedPage);
+      renderPage(item.target);
+    }
+  } else if (item.type === 'action') {
+    alert(`${item.label}: 执行操作`);
+  } else if (item.type === 'input') {
+    const rows = document.querySelectorAll('#infoBody .info-row');
+    const row = rows[focusedRowIdx];
+    const valEl = row.querySelector('.info-value');
+    openInputDialog(item.label, item.value, (newVal) => {
+      item.value = newVal;
+      valEl.textContent = newVal;
+    });
+  }
+}
+
+function cycleChoiceValue(delta) {
+  const item = getFocusedItem();
+  if (!item || item.type !== 'choice') return;
+
+  const opts = item.options;
+  const idx = opts.indexOf(item.value);
+  let newIdx;
+  if (delta > 0) {
+    newIdx = idx < opts.length - 1 ? idx + 1 : 0;
+  } else {
+    newIdx = idx > 0 ? idx - 1 : opts.length - 1;
+  }
+  const newVal = opts[newIdx];
+  item.value = newVal;
+
+  // 更新DOM
+  const rows = document.querySelectorAll('#infoBody .info-row');
+  const row = rows[focusedRowIdx];
+  const valEl = row.querySelector('.info-value');
+  if (valEl) valEl.textContent = newVal;
+
+  // 若此choice有key，重新渲染以应用条件显示
+  if (item.key && currentRenderedPage) {
+    renderPage(currentRenderedPage);
+  }
+}
+
+// ==================== 渲染页面 ====================
+function renderPage(pageName) {
+  const data = subPages[pageName] || biosData[pageName];
+  if (!data) return;
+
+  // 更新当前渲染的页面名称
+  currentRenderedPage = pageName;
+
+  // 更新Tab栏显示（子页面时只显示所属Tab）
+  updateTabVisibility(pageName);
+
+  const body = document.getElementById('infoBody');
+  const header = document.getElementById('infoHeader');
+  const helpText = document.getElementById('helpText');
+
+  // 子页面显示标题，一级页面隐藏标题
+  if (subPages[pageName]) {
+    header.style.display = '';
+    header.textContent = data.title || data.label || pageName;
+  } else {
+    header.style.display = 'none';
+    header.textContent = '';
+  }
+
+  // 一级页面不显示帮助信息，子页面显示
+  if (subPages[pageName]) {
+    helpText.innerHTML = data.help !== undefined ? data.help.replace(/\n/g, '<br>') : '';
+  } else {
+    helpText.innerHTML = '';
+  }
+
+  body.innerHTML = '';
+  focusedRowIdx = 0;
+  actionRows = []; // 重置可交互行索引
+
+  if (!data.items) return;
+
+  // 收集当前页面的choice项值（用于条件显示判断）
+  const pageValues = {};
+  data.items.forEach(item => {
+    if (item.key) {
+      pageValues[item.key] = item.value;
+    }
+  });
+
+  let actionIdx = 0;
+  data.items.forEach((item, idx) => {
+    // 条件显示：检查visibleWhen
+    if (item.visibleWhen) {
+      const cond = item.visibleWhen;
+      let visible = true;
+      for (const [key, val] of Object.entries(cond)) {
+        if (pageValues[key] !== val) {
+          visible = false;
+          break;
+        }
+      }
+      if (!visible) return;
+    }
+    if (item.type === 'spacer') {
+      body.appendChild(document.createElement('div')).style.height = '20px';
+      return;
+    }
+
+    if (item.type === 'sub') {
+      const row = document.createElement('div');
+      row.className = 'sub-row';
+      row.innerHTML = `<span class="s-label">${item.label}</span><span class="s-value">${item.value}</span>`;
+      body.appendChild(row);
+      return;
+    }
+
+    const row = document.createElement('div');
+    // 检查disabledWhen条件
+    let isDisabled = false;
+    if (item.disabledWhen) {
+      const cond = item.disabledWhen;
+      for (const [key, val] of Object.entries(cond)) {
+        if (pageValues[key] === val) {
+          isDisabled = true;
+          break;
+        }
+      }
+    }
+    row.className = 'info-row' + (item.type === 'text' || item.type === 'pci-row' && item.noArrow || isDisabled ? ' readonly' : '');
+    row.dataset.idx = idx;
+    row.dataset.type = item.type; // 标记行类型
+
+    const label = document.createElement('span');
+    label.className = 'info-label';
+    label.textContent = item.label;
+    row.appendChild(label);
+
+    const val = document.createElement('span');
+
+    // 鼠标交互：仅非readonly且非disabled行绑定
+    if (item.type !== 'text' && !isDisabled) {
+      row.addEventListener('mouseenter', () => {
+        const allRows = document.querySelectorAll('#infoBody .info-row');
+        allRows.forEach((r, i) => {
+          r.classList.toggle('focused', r === row);
+          if (r === row) focusedRowIdx = i;  // 使用DOM索引而非data索引
+        });
+        updateHelpOnFocus();
+      });
+      row.addEventListener('mouseleave', () => {
+        row.classList.remove('focused');
+        const allRows = document.querySelectorAll('#infoBody .info-row');
+        let domIdx = -1;
+        allRows.forEach((r, i) => { if (r === row) domIdx = i; });
+        if (focusedRowIdx === domIdx) {
+          focusedRowIdx = -1;
+        }
+      });
+    }
+
+    if (item.type === 'choice' && !isDisabled) {
+      row.classList.add('is-choice');
+      val.className = 'info-value editable choice-value';
+      val.textContent = item.value;
+      val.style.cursor = 'pointer';
+      val.dataset.options = JSON.stringify(item.options);
+      val.dataset.current = item.value;
+      val.addEventListener('click', (e) => {
+        console.log('choice click', item.label, item.value, item.target, item.disabledWhen);
+        e.stopPropagation();
+        if (item.target) {
+          // 有target时点击进入子页面（如选择语言）
+          historyStack.push(currentRenderedPage);
+          renderPage(item.target);
+        } else {
+          // 否则展开行内选择器
+          const allRows = document.querySelectorAll('#infoBody .info-row');
+          allRows.forEach((r, i) => {
+            if (r === row) {
+              focusedRowIdx = i;
+              r.classList.add('focused');
+            } else {
+              r.classList.remove('focused');
+            }
+          });
+          console.log('opening picker for', item.label, item.options, item.value);
+          openInlinePicker(val, item.options, item.value, (newVal) => {
+            console.log('picker callback', item.label, 'newVal=', newVal);
+            item.value = newVal;
+            val.textContent = newVal;
+            val.dataset.current = newVal;
+            // 若此choice有key（如sata_controller），重新渲染以应用条件显示
+            if (item.key && currentRenderedPage) {
+              renderPage(currentRenderedPage);
+            }
+          });
+        }
+      });
+    } else if (item.type === 'input') {
+      row.classList.add('is-choice');
+      val.className = 'info-value editable choice-value';
+      val.textContent = item.value;
+      val.style.cursor = 'pointer';
+      val.addEventListener('click', () => {
+        openInputDialog(item.label, item.value, (newVal) => {
+          item.value = newVal;
+          val.textContent = newVal;
+        });
+      });
+    } else if (item.type === 'action') {
+      row.classList.add('is-submenu');
+      val.className = item.value ? 'info-value highlight' : 'info-value';
+      val.textContent = item.value;
+      if (!item.value) val.style.display = 'none';
+      val.style.cursor = 'pointer';
+      row.addEventListener('click', () => {
+        if (item.action === 'password') {
+          openPasswordDialog(item.label, (pwd) => {
+            if (pwd) {
+              if (item.label === '设置管理员密码') {
+                biosData.security.items[0].value = '已安装';
+              } else if (item.label === '设置用户密码') {
+                biosData.security.items[1].value = '已安装';
+              }
+              renderPage(currentRenderedPage);
+            }
+          });
+        } else {
+          alert(`${item.label}: 执行操作`);
+        }
+      });
+    } else if (item.type === 'pci-row') {
+      // PCI设备列表行：固定列宽渲染
+      if (!item.noArrow) row.classList.add('is-submenu');
+      else row.classList.add('pci-header');
+      const cols = item.data || item.label.split(/\s+/).filter(s => s);
+      let html = '<div class="pci-row-label">';
+      if (!item.noArrow) {
+        html += '<div class="submenu-arrow">▶</div>';
+      }
+      cols.forEach((col, i) => {
+        html += `<div class="pci-col pci-col-${i}">${col}</div>`;
+      });
+      html += '</div>';
+      label.innerHTML = html;
+      label.style.width = '100%';
+      label.style.whiteSpace = 'normal';
+      val.className = 'info-value';
+      val.textContent = '';
+      // 表头行(noArrow)不需要交互效果
+      if (!item.noArrow) {
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => {
+          if (item.target) {
+            historyStack.push(currentRenderedPage);
+            renderPage(item.target);
+          }
+        });
+      }
+      } else if (item.type === 'submenu') {
+        // 子菜单：▶箭头在label文字左侧（实机风格）
+        row.classList.add('is-submenu');
+         label.innerHTML = '<div class="submenu-arrow">▶</div>' + item.label;
+         label.style.display = 'flex';
+        val.className = 'info-value';  /* 值列清空，不显示▶ */
+        val.textContent = '';  /* 不显示任何值 */
+        row.style.cursor = 'pointer';
+        row.addEventListener('click', () => {
+          if (item.target) {
+            historyStack.push(currentRenderedPage);
+            renderPage(item.target);
+          }
+        });
+      } else {
+      // text 类型：只读信息（支持 \n 换行）
+      val.className = 'info-value';
+      // 将 \n 转为 <br> 以支持多行显示（如内存插槽详细信息）
+      val.innerHTML = item.value.replace(/\n/g, '<br>');
+      val.style.color = 'var(--label-text)';
+    }
+
+    row.appendChild(val);
+    body.appendChild(row);
+  });
+
+  // 进入页面时无默认焦点，保持页面干净（实机风格）
+  focusedRowIdx = -1;
+  const allRows = document.querySelectorAll('#infoBody .info-row');
+  allRows.forEach((r) => r.classList.remove('focused'));
+}
+
+// ==================== 弹出式选择器（frame_0012风格） ====================
+function openInlinePicker(targetElement, options, current, callback) {
+  const existing = document.getElementById('activeInlinePicker');
+  if (existing) existing.remove();
+
+  const listDiv = document.createElement('div');
+  listDiv.className = 'inline-picker';
+  listDiv.id = 'activeInlinePicker';
+
+  let selectedIdx = options.indexOf(current);
+  if (selectedIdx < 0) selectedIdx = 0;
+
+  let isPicking = false;  // 防重入标志
+
+  function renderOptions() {
+    listDiv.innerHTML = '';
+    options.forEach((opt, i) => {
+      const div = document.createElement('div');
+      div.className = 'inline-option' + (i === selectedIdx ? ' selected' : '');
+      const span = document.createElement('span');
+      span.textContent = opt;
+      div.appendChild(span);
+      // 鼠标悬停高亮（不重建DOM，仅修改class，避免事件丢失）
+      div.addEventListener('mouseenter', () => {
+        if (selectedIdx === i) return;
+        selectedIdx = i;
+        // 仅更新class，不重建DOM，避免click事件丢失
+        const allOpts = listDiv.querySelectorAll('.inline-option');
+        allOpts.forEach((o, idx) => {
+          if (idx === selectedIdx) {
+            o.classList.add('selected');
+          } else {
+            o.classList.remove('selected');
+          }
+        });
+      });
+      // 使用 mousedown 替代 click，确保在 document click 之前执行
+      div.addEventListener('mousedown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (isPicking) return;
+        isPicking = true;
+        // 延迟执行回调和关闭，确保 mousedown 完全处理完毕
+        requestAnimationFrame(() => {
+          callback(opt);
+          closePicker();
+        });
+      });
+      listDiv.appendChild(div);
+
+      if (i < options.length - 1) {
+        const spacer = document.createElement('div');
+        spacer.className = 'inline-option-spacer';
+        spacer.style.height = '2px';
+        listDiv.appendChild(spacer);
+      }
+    });
+  }
+
+  function closePicker() {
+    if (!listDiv.parentNode) return; // 已关闭则忽略
+    listDiv.remove();
+    document.removeEventListener('keydown', pickerKeyHandler);
+    document.removeEventListener('click', closeOnClickOutside);
+    document.removeEventListener('mousedown', closeOnMouseDownOutside);
+    activePicker = null;
+    isPicking = false;
+  }
+
+  function pickerKeyHandler(e) {
+    // 阻止事件冒泡到 bindKeyboard，防止重复触发
+    e.stopPropagation();
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      selectedIdx = (selectedIdx + 1) % options.length;
+      renderOptions();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      selectedIdx = (selectedIdx - 1 + options.length) % options.length;
+      renderOptions();
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      if (isPicking) return;
+      isPicking = true;
+      callback(options[selectedIdx]);
+      closePicker();
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      closePicker();
+    }
+  }
+
+  function closeOnClickOutside(e) {
+    if (isPicking) return;
+    if (!listDiv.contains(e.target) && e.target !== targetElement) {
+      closePicker();
+    }
+  }
+
+  function closeOnMouseDownOutside(e) {
+    if (isPicking) return;
+    if (!listDiv.contains(e.target) && e.target !== targetElement) {
+      closePicker();
+    }
+  }
+
+  renderOptions();
+  document.body.appendChild(listDiv);
+  activePicker = { close: closePicker };
+
+  // 计算绝对位置：紧贴 targetElement 左下角
+  const rect = targetElement.getBoundingClientRect();
+  listDiv.style.left = rect.left + 'px';
+  listDiv.style.top = rect.bottom + 'px';
+
+  // 绑定事件
+  document.addEventListener('keydown', pickerKeyHandler);
+  document.addEventListener('click', closeOnClickOutside);
+  document.addEventListener('mousedown', closeOnMouseDownOutside);
+}
+
+function openInputDialog(title, current, callback) {
+  const newVal = prompt(title + '：', current.replace(/[\[\]]/g, ''));
+  if (newVal !== null) {
+    callback('[' + newVal + ']');
+  }
+}
+
+function openPasswordDialog(title, callback) {
+  const modal = document.createElement('div');
+  modal.className = 'password-modal';
+  modal.innerHTML = `
+    <div class="password-box">
+      <div class="title">请输入新密码</div>
+      <input type="password" class="input-area" id="pwdInput">
+    </div>
+  `;
+  document.body.appendChild(modal);
+  const input = modal.querySelector('#pwdInput');
+  input.focus();
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) document.body.removeChild(modal);
+  });
+  document.addEventListener('keydown', function escHandler(e) {
+    e.stopPropagation();
+    if (e.key === 'Enter') {
+      const pwd = input.value;
+      document.body.removeChild(modal);
+      document.removeEventListener('keydown', escHandler);
+      if (callback) callback(pwd);
+    } else if (e.key === 'Escape') {
+      document.body.removeChild(modal);
+      document.removeEventListener('keydown', escHandler);
+    }
+  });
+}
+
+// ==================== 搜索 ====================
+function doSearch() {
+  const keyword = document.getElementById('searchInput').value.toLowerCase();
+  if (!keyword) return;
+
+  const results = [];
+  for (const [key, data] of Object.entries(biosData)) {
+    if (data.items) {
+      data.items.forEach(item => {
+        if (item.label && item.label.toLowerCase().includes(keyword)) {
+          results.push({ page: key, label: item.label, type: '主菜单' });
+        }
+      });
+    }
+  }
+  for (const [key, data] of Object.entries(subPages)) {
+    if (data.items) {
+      data.items.forEach(item => {
+        if (item.label && item.label.toLowerCase().includes(keyword)) {
+          results.push({ page: key, label: item.label, type: data.title });
+        }
+      });
+    }
+  }
+
+  const body = document.getElementById('infoBody');
+  const header = document.getElementById('infoHeader');
+  const helpText = document.getElementById('helpText');
+  body.innerHTML = '';
+  header.style.display = '';
+  header.textContent = '搜索结果';
+  helpText.textContent = `找到 ${results.length} 个匹配项。`;
+
+  body.innerHTML = `<div style="padding:8px;font-weight:bold;color:var(--label-text);">关键词 "${keyword}"：${results.length} 个结果</div>`;
+
+  results.forEach(r => {
+    const row = document.createElement('div');
+    row.className = 'info-row';
+    row.style.cursor = 'pointer';
+    row.innerHTML = `<span class="info-label">${r.label}</span><span class="info-value" style="font-size:11px;color:var(--help-text)">${r.type}</span>`;
+    row.addEventListener('click', () => {
+      for (const [tabKey, tabData] of Object.entries(biosData)) {
+        if (tabData.items) {
+          const found = tabData.items.find(item => item.target === r.page);
+          if (found) {
+            switchTab(tabKey);
+            historyStack.push(tabKey);
+            renderPage(r.page);
+            return;
+          }
+        }
+      }
+      // 直接跳转
+      historyStack.push('home');
+      renderPage(r.page);
+    });
+    body.appendChild(row);
+  });
+}
+
+// ==================== 键盘支持 ====================
+function bindKeyboard() {
+  document.addEventListener('keydown', (e) => {
+    // 弹出选择器打开时，不处理主导航按键
+    if (activePicker) return;
+
+    const tabs = ['home','device','advanced','security','boot','exit','search'];
+    const idx = tabs.indexOf(currentTab);
+    const rows = document.querySelectorAll('#infoBody .info-row');
+
+    if (e.key === 'ArrowLeft') {
+      if (idx > 0) switchTab(tabs[idx - 1]);
+    } else if (e.key === 'ArrowRight') {
+      if (idx < tabs.length - 1) switchTab(tabs[idx + 1]);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (focusedRowIdx === -1) {
+        // 从没有焦点开始：跳到最后一个可交互行
+        for (let i = rows.length - 1; i >= 0; i--) {
+          if (!rows[i].classList.contains('readonly')) {
+            focusedRowIdx = i;
+            focusRow(i);
+            break;
+          }
+        }
+      } else if (focusedRowIdx > 0) {
+        focusedRowIdx--;
+        // 如果跳到只读行或禁用行，继续向上找可交互行
+        while (focusedRowIdx > 0 && rows[focusedRowIdx] && rows[focusedRowIdx].classList.contains('readonly')) {
+          focusedRowIdx--;
+        }
+        // 如果最终停在只读行或禁用行，跳过
+        if (rows[focusedRowIdx] && !rows[focusedRowIdx].classList.contains('readonly')) {
+          focusRow(focusedRowIdx);
+        }
+      }
+      updateHelpOnFocus();
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (focusedRowIdx === -1) {
+        // 从没有焦点开始：跳到第一个可交互行
+        for (let i = 0; i < rows.length; i++) {
+          if (!rows[i].classList.contains('readonly')) {
+            focusedRowIdx = i;
+            focusRow(i);
+            break;
+          }
+        }
+      } else if (focusedRowIdx < rows.length - 1) {
+        focusedRowIdx++;
+        // 如果跳到只读行或禁用行，继续向下找可交互行
+        while (focusedRowIdx < rows.length - 1 && rows[focusedRowIdx] && (rows[focusedRowIdx].classList.contains('readonly') || rows[focusedRowIdx].classList.contains('disabled'))) {
+          focusedRowIdx++;
+        }
+        // 如果最终停在只读行或禁用行，跳过
+        if (rows[focusedRowIdx] && !rows[focusedRowIdx].classList.contains('readonly')) {
+          focusRow(focusedRowIdx);
+        }
+      }
+      updateHelpOnFocus();
+    } else if (e.key === 'Enter') {
+      if (focusedRowIdx >= 0) activateFocusedRow();
+    } else if (e.key === '+' || e.key === '=') {
+      e.preventDefault();
+      if (focusedRowIdx >= 0) cycleChoiceValue(1);
+    } else if (e.key === '-' || e.key === '_') {
+      e.preventDefault();
+      if (focusedRowIdx >= 0) cycleChoiceValue(-1);
+    } else if (e.key === 'Escape') {
+      if (historyStack.length > 0) {
+        const prev = historyStack.pop();
+        renderPage(prev);
+      } else {
+        if (confirm('确定要退出BIOS吗？')) alert('已退出BIOS');
+      }
+    } else if (e.key === 'F1') {
+      alert('使用↑↓选择项目，←→切换Tab，Enter进入子菜单或打开选择器，+/-切换选项值，Esc返回上级或退出。');
+    } else if (e.key === 'F9') {
+      if (confirm('恢复所有默认设置？')) location.reload();
+    } else if (e.key === 'F10') {
+      if (confirm('保存更改并退出？')) alert('已保存并退出');
+    }
+  });
+}
+
+// 根据当前焦点行更新帮助信息
+function updateHelpOnFocus() {
+  const item = getFocusedItem();
+  if (item && item.help !== undefined) {
+    document.getElementById('helpText').innerHTML = item.help.replace(/\n/g, '<br>');
+  }
+}
+
+// ==================== 启动 ====================
+function init() {
+  renderPage('home');
+  bindKeyboard();
+}
+init();
+</script>
+</body>
+</html>
