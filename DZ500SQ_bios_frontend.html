@@ -837,7 +837,7 @@ const subPages = {
       { type:'choice', label:'安全冻结', value:'<启用>', options:['<启用>'], help:'启用或禁用安全冻结功能。\n设备冻结后，只有在设备重置后才会解除冻结状态。' },
       { type:'spacer' },
       { type:'text', label:'选择驱动器', value:'' },
-      { type:'submenu', label:'NVMe (PCI1-0-0) : SCY C3000 (ATA-SEC)', value:'▶', target:'drive_select', help:'' }
+      { type:'submenu', label:'NVMe (PCI1-0-0) : SCY C3000 (ATA-SEC)', value:'▶', target:'drive_select', help:'选择此项设置硬盘密码。TCG-OPAL/ATA-SEC标识当前所使用的安全协议。使用TCG-OPAL协议的NVMe需要关闭电源才能改变安全状态。' }
     ]
   },
   auto_power: {
