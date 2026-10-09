@@ -824,7 +824,7 @@ const subPages = {
   ipv6_config: { title:'IPv6网络配置', help:'IPv6网络配置', items:[] },
   drive_select: {
     title: '硬盘密码',
-    help: '请谨慎使用硬盘密码功能。\n忘记密码后驱动器将永远无法使用。\n设定立即生效，不需要保存。\n（系统重启时，如果硬盘掉电，硬盘状态会重置，启动时需要再次输入密码；如硬盘未掉电，则硬盘状态保持，无需重新解锁。）',
+    help: '',
     items: [
       { type:'text', label:'NVMe (PCI1-0-0) : SCY C3000 (ATA-SEC)', value:'' },
       { type:'spacer' },
@@ -833,6 +833,8 @@ const subPages = {
       { type:'text', label:'用户密码', value:'未设置' },
       { type:'text', label:'解锁状态', value:'已解锁' },
       { type:'text', label:'安全冻结状态', value:'未冻结' },
+      { type:'spacer' },
+      { type:'text', label:'', value:'请谨慎使用硬盘密码功能。\n忘记密码后驱动器将永远无法使用。\n设定立即生效，不需要保存。\n（系统重启时，如果硬盘掉电。硬盘状态会重置，启动时需要再次输入密码;如硬盘未掉电，则硬盘状态保持。无需重新解锁。)' },
       { type:'spacer' },
       { type:'action', label:'启用硬盘用户密码', value:'', action:'enable_hdd_user_pwd', help:'启用硬盘用户密码。' }
     ]
@@ -1524,10 +1526,14 @@ function renderPage(pageName) {
       }
       if (!visible) return;
     }
-    if (item.type === 'spacer') {
-      body.appendChild(document.createElement('div')).style.height = '20px';
-      return;
-    }
+      if (item.type === 'spacer') {
+        const empty = document.createElement('div');
+        empty.className = 'info-row readonly';
+        empty.style.height = '28px';
+        empty.style.visibility = 'hidden';
+        body.appendChild(empty);
+        continue;
+      }
 
     if (item.type === 'sub') {
       const row = document.createElement('div');
@@ -1669,17 +1675,17 @@ function renderPage(pageName) {
       label.style.width = '100%';
       label.style.whiteSpace = 'normal';
       val.className = 'info-value';
-      val.textContent = '';
-      // 表头行(noArrow)不需要交互效果
-      if (!item.noArrow) {
-        row.style.cursor = 'pointer';
-        row.addEventListener('click', () => {
-          if (item.target) {
-            historyStack.push(currentRenderedPage);
-            renderPage(item.target);
-          }
-        });
-      }
+        val.textContent = '';
+        // 表头行(noArrow)不需要交互效果
+        if (!item.noArrow) {
+          row.style.cursor = 'pointer';
+          row.addEventListener('click', () => {
+            if (item.target) {
+              historyStack.push(currentRenderedPage);
+              renderPage(item.target);
+            }
+          });
+        }
       } else if (item.type === 'submenu') {
         // 子菜单：▶箭头在label文字左侧（实机风格）
         row.classList.add('is-submenu');
@@ -1700,6 +1706,11 @@ function renderPage(pageName) {
       // 将 \n 转为 <br> 以支持多行显示（如内存插槽详细信息）
       val.innerHTML = item.value.replace(/\n/g, '<br>');
       val.style.color = 'var(--label-text)';
+      if (item.label === '') {
+        label.style.display = 'none';
+        val.style.width = '100%';
+        val.style.whiteSpace = 'pre-wrap';
+      }
     }
 
     row.appendChild(val);
