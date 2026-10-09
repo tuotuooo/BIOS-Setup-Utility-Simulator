@@ -833,7 +833,7 @@ const subPages = {
     title: '硬盘密码',
     help: '选择此项设置硬盘密码。TCG-OPAL/ATA-SEC标识当前所使用的安全协议。使用TCG-OPAL协议的NVMe需要关闭电源才能改变安全状态。',
     items: [
-      { type:'choice', label:'设置硬盘密码的哈希算法', value:'<SHA-256 Hash>', options:['<SHA-256 Hash>','<SM3 Hash>'], help:'' },
+      { type:'choice', label:'设置硬盘密码的哈希算法', value:'<SHA-256 Hash>', options:['<SHA-256 Hash>','<SM3 Hash>'], help:'生成硬盘密码的哈希算法：Sha256 or SM3。' },
       { type:'choice', label:'安全冻结', value:'<启用>', options:['<启用>'], help:'' },
       { type:'spacer' },
       { type:'text', label:'选择驱动器', value:'' },
