@@ -823,9 +823,13 @@ const subPages = {
   ipv4_config: { title:'IPv4网络配置', help:'IPv4网络配置', items:[] },
   ipv6_config: { title:'IPv6网络配置', help:'IPv6网络配置', items:[] },
   drive_select: {
-    title: 'NVMe (PCI1-0-0) : SCY C3000 (ATA-SEC)',
+    title: '硬盘密码',
     help: '请谨慎使用硬盘密码功能。\n忘记密码后驱动器将永远无法使用。\n设定立即生效，不需要保存。\n（系统重启时，如果硬盘掉电，硬盘状态会重置，启动时需要再次输入密码；如硬盘未掉电，则硬盘状态保持，无需重新解锁。）',
     items: [
+      { type:'text', label:'NVMe (PCI1-0-0) : SCY C3000 (ATA-SEC)', value:'' },
+      { type:'spacer' },
+      { type:'spacer' },
+      { type:'spacer' },
       { type:'text', label:'硬盘密码使能', value:'未使能' },
       { type:'text', label:'管理员密码', value:'未设置' },
       { type:'text', label:'用户密码', value:'未设置' },
