@@ -372,6 +372,7 @@
     align-items: center;
     min-width: 260px;
     min-height: 120px;
+    margin-top: 140px;
   }
   .hdd-password-box .title {
     color: #ffffff;
@@ -396,12 +397,12 @@
     white-space: nowrap;
   }
   .hdd-password-row .input-area {
-    background: #000000;
+    background: transparent;
     color: #ffffff;
     border: none;
     padding: 0 1px;
     font-size: 13px;
-    width: 130px;
+    width: 170px;
     box-sizing: border-box;
     text-align: left;
     display: inline-block;
@@ -410,9 +411,60 @@
     line-height: 1em;
     min-height: unset;
   }
+  .hdd-password-row .input-area.has-value {
+    background: #000000;
+  }
   .hdd-password-row .input-area:focus {
     outline: none;
     caret-color: transparent;
+  }
+  /* 确认弹窗（是/否选择） */
+  .confirm-box {
+    background: #0000b8;
+    outline: 2px solid var(--title-text);
+    outline-offset: -10px;
+    padding: 5px 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-width: 300px;
+    min-height: 100px;
+  }
+  .confirm-box .title {
+    color: #ffffff;
+    font-size: 14px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #ffffff;
+    padding-bottom: 4px;
+    width: 100%;
+    text-align: center;
+  }
+  .confirm-box .message {
+    color: #ffffff;
+    font-size: 13px;
+    margin-bottom: 8px;
+    text-align: center;
+    line-height: 1.4;
+  }
+  .confirm-box .options {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+  }
+  .confirm-box .opt {
+    color: #aeaeae;
+    cursor: pointer;
+    padding: 2px 8px;
+    background: transparent;
+  }
+  .confirm-box .opt span {
+    padding: 0 2px;
+  }
+  .confirm-box .opt.selected span {
+    background: #00c8d8;
+    color: #ffffff;
+    font-weight: bold;
   }
   /* 右侧面板（帮助） */
   .help-panel {
@@ -491,13 +543,6 @@
     <div class="tab" data-tab="boot">启动</div>
     <div class="tab" data-tab="exit">退出</div>
     <div class="tab" data-tab="search">搜索</div>
-  </div>
-
-  <!-- 搜索栏 -->
-  <div id="searchBar" style="display:none;background:var(--main-gray);padding:4px 8px;border-bottom:1px solid var(--border-color);">
-    <span style="font-size:12px;font-weight:bold;color:var(--label-text);">搜索:</span>
-    <input type="text" id="searchInput" style="width:200px;padding:2px 4px;font-size:12px;font-family:inherit;border:1px inset var(--border-color);background:#c0c0c0;">
-    <button onclick="doSearch()" style="padding:2px 8px;font-size:11px;font-family:inherit;border:1px outset var(--border-color);background:#d0d0d0;cursor:pointer;">查找</button>
   </div>
 
   <!-- 主工作区 -->
@@ -596,9 +641,9 @@ const biosData = {
       { type:'action', label:'设置管理员密码', value:'', action:'password', help:'选择这一项来设定、更改以及删除管理员密码。密码支持字符包括字母、数字以及其它可打印字符。密码区分大小写，支持输入密码长度为到8到20。\n注意:\n输入密码时按Enter健输入空可以删除密码。密码至少包含大写字母，小写字母，数字，特殊字符四种类型中的三种。且不能设定为之前设定过的密码，五(含)次以内。\n如果启用管理员密码网络验证，进行管理员密码更改时将会进行网络认证。' },
       { type:'action', label:'设置用户密码', value:'', action:'password', help:'选择这一项来设定、更改以及删除用户密码。密码支持字符包括字母、数字以及其它可打印字符。密码区分大小写，支持输入密码长度为8到20。\n注意:\n输入密码时按Enter健输入空可以删除密码。密码至少包含大写字母，小写字母，数字，特殊字符四种类型中的三种。且不能设定为之前设定过的密码，五(含)次以内。\n如果启用用户密码网络验证，进行用户密码更改时将会进行网络认证。' },
       { type:'spacer' },
-      { type:'submenu', label:'硬盘密码', target:'drive_password', help:'选择此项设置硬盘密码。TCG-OPAL/ATA-SEC标识当前所使用的安全协议。使用TCG-OPAL协议的NVMe需要关闭电源才能改变安全状态。' },
-      { type:'submenu', label:'安全启动', target:'secure_boot', help:'配置安全启动选项。' },
-      { type:'submenu', label:'TCG配置', target:'tcg_config', help:'配置TCG可信计算功能。' },
+      { type:'submenu', label:'硬盘密码', target:'drive_password', help:'管理硬盘密码，擦除硬盘数据' },
+      { type:'submenu', label:'安全启动', target:'secure_boot', help:'安全启动设置，包括启用/禁用功能和删除/恢复键' },
+      { type:'submenu', label:'TCG2配置', target:'tcg_config', help:'' },
       { type:'submenu', label:'硬盘绑定', target:'drive_bind', help:'配置硬盘绑定功能。' }
     ]
   },
@@ -626,17 +671,26 @@ const biosData = {
     label: '退出',
     help: '保存/不保存设置并退出，或加载默认设置。',
     items: [
-      { type:'action', label:'恢复初始值', value:'<进入>', help:'恢复所有设置为初始值。' },
-      { type:'action', label:'保存退出', value:'<进入>', help:'保存当前设置并退出BIOS。' },
-      { type:'action', label:'关机', value:'<进入>', help:'关闭系统电源。' },
-      { type:'action', label:'重启', value:'<进入>', help:'重启系统。' },
-      { type:'submenu', label:'BIOS备份还原', target:'bios_backup', help:'BIOS固件备份和还原功能。' }
+      { type:'action', label:'恢复初始值', value:'', help:'恢复所有设置为初始值。' },
+      { type:'action', label:'保存退出', value:'', help:'保存当前设置并退出BIOS。' },
+      { type:'spacer' },
+      { type:'action', label:'关机', value:'', help:'关闭系统电源。' },
+      { type:'action', label:'重启', value:'', help:'重启系统。' },
+      { type:'spacer' },
+      { type:'submenu', label:'BIOS备份还原', target:'bios_backup', help:'BIOS固件备份和还原功能。' },
+      { type:'spacer' },
+      { type:'choice', label:'BIOS固件更新参数', value:'<保留配置>', options:['<保留配置>','<完全刷新>'], help:'BIOS固件更新时是否保留当前配置。' },
+      { type:'action', label:'BIOS固件更新', value:'', help:'执行BIOS固件更新。' },
+      { type:'action', label:'BIOS网络更新固件', value:'', help:'通过网络更新BIOS固件。' }
     ]
   },
   search: {
     label: '搜索',
-    help: '输入关键词搜索设置项。',
-    items: []
+    help: '',
+    items: [
+      { type:'input', label:'搜索内容', value:'', help:'' },
+      { type:'choice', label:'搜索匹配算法', value:'<任意字符>', options:['<任意字符>','<首字符>','<末字符>','<拼音搜索>'], help:'' }
+    ]
   }
 };
 
@@ -891,7 +945,6 @@ const subPages = {
       { type:'text', label:'解锁状态', value:'已解锁' },
       { type:'text', label:'安全冻结状态', value:'未冻结' },
       { type:'spacer' },
-      { type:'spacer' },
       { type:'text', label:'请谨慎使用硬盘密码功能。', value:'' },
       { type:'text', label:'忘记密码后驱动器将永远无法使用。', value:'' },
       { type:'text', label:'设定立即生效，不需要保存。', value:'' },
@@ -926,12 +979,14 @@ const subPages = {
     title: '安全启动',
     help: '配置安全启动选项。',
     items: [
-      { type:'text', label:'系统模式', value:'安全启动' },
-      { type:'choice', label:'设定模式', value:'<关闭>', options:['<关闭>','<打开>'], help:'用户模式与部署模式切换。' },
+      { type:'text', label:'系统模式', value:'设定模式' },
+      { type:'choice', label:'安全启动', value:'<关闭>', options:['<关闭>','<打开>'], help:'[打开] 打开安全启动，BIOS会阻止未被授权的系统被调起。[关闭]关闭安全启动。\n立即生效，无法通过放弃修改或加载默认值的方式修改选项。' },
+      { type:'spacer' },
       { type:'action', label:'恢复出厂设置', value:'<进入>', help:'恢复安全启动出厂设置。' },
       { type:'action', label:'重置为设定模式', value:'<进入>', help:'重置为设定模式。' },
       { type:'action', label:'进入审计模式', value:'<进入>', help:'进入审计模式。' },
       { type:'action', label:'进入部署模式', value:'<进入>', help:'进入部署模式。' },
+      { type:'spacer' },
       { type:'submenu', label:'安全设置项管理', target:'secure_items', help:'管理安全启动设置项。' }
     ]
   },
@@ -1038,10 +1093,10 @@ const subPages = {
     ]
   },
   tcg_config: {
-    title: 'TCG配置',
-    help: '配置TCG可信计算功能。',
+    title: 'TCG2配置',
+    help: '',
     items: [
-      { type:'choice', label:'TCG功能', value:'<打开>', options:['<关闭>','<打开>'], help:'启用或禁用TCG可信计算功能。' }
+      { type:'text', label:'当前TPM设备', value:'未安装' }
     ]
   },
   drive_bind: {
@@ -1405,11 +1460,14 @@ function findParentTab(subPageName) {
 // ==================== Tab切换 ====================
 function switchTab(tabName) {
   if (tabName === 'search') {
-    document.getElementById('searchBar').style.display = 'flex';
-    document.getElementById('searchInput').focus();
+    currentTab = tabName;
+    historyStack = [];
+    document.querySelectorAll('.tab').forEach(t => {
+      t.classList.toggle('active', t.dataset.tab === tabName);
+    });
+    renderPage(tabName);
     return;
   }
-  document.getElementById('searchBar').style.display = 'none';
   currentTab = tabName;
   historyStack = [];
   // Tab样式更新
@@ -1677,10 +1735,57 @@ function renderPage(pageName) {
           console.log('opening picker for', item.label, item.options, item.value);
           openInlinePicker(val, item.options, item.value, (newVal) => {
             console.log('picker callback', item.label, 'newVal=', newVal);
+            if (item.label === '安全启动' && item.value === '<关闭>' && newVal === '<打开>') {
+              openConfirmDialog('打开安全启动', '确定打开安全启动删除所有的Key，使用默认的Key吗？', (confirmed) => {
+                if (confirmed) {
+                  openTipDialog('正在更新安全策略...', () => {
+                    const items = subPages.secure_boot.items;
+                    const modeIdx = items.findIndex(i => i.label === '系统模式');
+                    if (modeIdx >= 0) items[modeIdx].value = '部署模式';
+                    const auditIdx = items.findIndex(i => i.label === '进入审计模式');
+                    if (auditIdx >= 0) items.splice(auditIdx, 1);
+                    const deployIdx = items.findIndex(i => i.label === '进入部署模式');
+                    if (deployIdx >= 0) {
+                      items[deployIdx].label = '退出部署模式';
+                      items[deployIdx].help = '退出部署模式。';
+                    }
+                    item.value = '<打开>';
+                    renderPage(currentRenderedPage);
+                  });
+                }
+              });
+              return;
+            }
+            if (item.label === '安全启动' && item.value === '<打开>' && newVal === '<关闭>') {
+              openConfirmDialog('关闭安全启动', '确定关闭安全启动会删除PK并切换到设定模式吗？', (confirmed) => {
+                if (confirmed) {
+                  openTipDialog('正在更新安全策略...', () => {
+                    const items = subPages.secure_boot.items;
+                    const modeIdx = items.findIndex(i => i.label === '系统模式');
+                    if (modeIdx >= 0) items[modeIdx].value = '设定模式';
+                    const auditIdx = items.findIndex(i => i.label === '进入审计模式');
+                    if (auditIdx < 0) {
+                      const deployIdx2 = items.findIndex(i => i.label === '退出部署模式');
+                      const insertIdx = deployIdx2 >= 0 ? deployIdx2 + 1 : items.findIndex(i => i.label === '进入部署模式');
+                      if (insertIdx >= 0) {
+                        items.splice(insertIdx, 0, { type:'action', label:'进入审计模式', value:'<进入>', help:'进入审计模式。' });
+                      }
+                    }
+                    const deployIdx = items.findIndex(i => i.label === '退出部署模式');
+                    if (deployIdx >= 0) {
+                      items[deployIdx].label = '进入部署模式';
+                      items[deployIdx].help = '进入部署模式。';
+                    }
+                    item.value = '<关闭>';
+                    renderPage(currentRenderedPage);
+                  });
+                }
+              });
+              return;
+            }
             item.value = newVal;
             val.textContent = newVal;
             val.dataset.current = newVal;
-            // 若此choice有key（如sata_controller），重新渲染以应用条件显示
             if (item.key && currentRenderedPage) {
               renderPage(currentRenderedPage);
             }
@@ -1699,8 +1804,8 @@ function renderPage(pageName) {
         });
       });
     } else if (item.type === 'action') {
-      row.classList.add('is-submenu');
-      val.className = item.value ? 'info-value highlight' : 'info-value';
+      row.classList.add('is-choice');
+      val.className = 'info-value editable choice-value';
       val.textContent = item.value;
       if (!item.value) val.style.display = 'none';
       val.style.cursor = 'pointer';
@@ -1983,6 +2088,15 @@ function openHddPasswordDialog(callback) {
   const input1 = modal.querySelector('#hddPwdInput');
   const input2 = modal.querySelector('#hddPwdConfirm');
   input1.focus();
+  function updateInputBg(inp) {
+    if (inp.value.length > 0) {
+      inp.classList.add('has-value');
+    } else {
+      inp.classList.remove('has-value');
+    }
+  }
+  input1.addEventListener('input', function() { updateInputBg(input1); });
+  input2.addEventListener('input', function() { updateInputBg(input2); });
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       document.body.removeChild(modal);
@@ -1992,6 +2106,11 @@ function openHddPasswordDialog(callback) {
   document.addEventListener('keydown', function escHandler(e) {
     e.stopPropagation();
     if (e.key === 'Enter') {
+      if (document.activeElement === input1) {
+        input1.classList.remove('has-value');
+        input2.focus();
+        return;
+      }
       const pwd1 = input1.value;
       const pwd2 = input2.value;
       if (pwd1 !== pwd2) {
@@ -2008,6 +2127,88 @@ function openHddPasswordDialog(callback) {
       activePasswordModal = null;
     }
   });
+}
+
+function openTipDialog(message, onClose) {
+  const modal = document.createElement('div');
+  modal.className = 'password-modal';
+  modal.innerHTML = `
+    <div class="confirm-box">
+      <div class="title">提示</div>
+      <div class="message">${message}</div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  activePasswordModal = modal;
+  setTimeout(() => {
+    if (document.body.contains(modal)) {
+      document.body.removeChild(modal);
+      activePasswordModal = null;
+    }
+    if (onClose) onClose();
+  }, 2000);
+}
+
+function openConfirmDialog(title, message, callback) {
+  const modal = document.createElement('div');
+  modal.className = 'password-modal';
+  let selectedIdx = 0;
+  const opts = ['是', '否'];
+  modal.innerHTML = `
+    <div class="confirm-box">
+      <div class="title">${title}</div>
+      <div class="message">${message}</div>
+      <div class="options">
+        <div class="opt selected" data-idx="0">[<span>是</span>]</div>
+        <div class="opt" data-idx="1">[<span>否</span>]</div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  activePasswordModal = modal;
+  const optEls = modal.querySelectorAll('.opt');
+  function renderSel() {
+    optEls.forEach((el, i) => {
+      if (i === selectedIdx) el.classList.add('selected');
+      else el.classList.remove('selected');
+    });
+  }
+  renderSel();
+  optEls.forEach((el, i) => {
+    el.addEventListener('click', () => {
+      document.body.removeChild(modal);
+      document.removeEventListener('keydown', handler);
+      activePasswordModal = null;
+      if (callback) callback(i === 0);
+    });
+  });
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      document.body.removeChild(modal);
+      document.removeEventListener('keydown', handler);
+      activePasswordModal = null;
+    }
+  });
+  function handler(e) {
+    e.stopPropagation();
+    if (e.key === 'ArrowLeft') {
+      selectedIdx = (selectedIdx - 1 + opts.length) % opts.length;
+      renderSel();
+    } else if (e.key === 'ArrowRight') {
+      selectedIdx = (selectedIdx + 1) % opts.length;
+      renderSel();
+    } else if (e.key === 'Enter') {
+      document.body.removeChild(modal);
+      document.removeEventListener('keydown', handler);
+      activePasswordModal = null;
+      if (callback) callback(selectedIdx === 0);
+    } else if (e.key === 'Escape') {
+      document.body.removeChild(modal);
+      document.removeEventListener('keydown', handler);
+      activePasswordModal = null;
+    }
+  }
+  document.addEventListener('keydown', handler);
 }
 
 // ==================== 搜索 ====================
