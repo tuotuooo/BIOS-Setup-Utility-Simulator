@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>百敖ByoCore BIOS 编辑器</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; font-family:'Microsoft YaHei',sans-serif; overflow:hidden; }
+  
+  #editor-root { width:100vw; height:100vh; display:flex; }
+  
+  /* 左侧编辑面板 */
+  .edit-panel { 
+    width:420px; flex-shrink:0; background:#1a1a2e; color:#eee; 
+    display:flex; flex-direction:column; border-right:3px solid #3f80c1; 
+    transition:width 0.3s;
+  }
+  .edit-panel.collapsed { width:36px; overflow:hidden; }
+  .edit-panel.collapsed .panel-body { display:none; }
+  
+  .panel-header { 
+    padding:8px 10px; background:#16213e; border-bottom:2px solid #3f80c1; 
+    font-size:13px; font-weight:bold; color:#e94560; 
+    display:flex; align-items:center; justify-content:space-between; 
+    flex-shrink:0;
+  }
+  .panel-body { flex:1; overflow:hidden; display:flex; flex-direction:column; padding:6px; }
+  
+  /* 工具栏 */
+  .edit-toolbar { 
+    display:flex; gap:4px; padding:6px 0; border-bottom:1px solid #3f80c1; 
+    margin-bottom:6px; flex-wrap:wrap; flex-shrink:0; 
+  }
+  .edit-toolbar .btn { 
+    padding:4px 8px; background:#0f3460; border:1px solid #3f80c1; 
+    color:#eee; cursor:pointer; font-size:11px; border-radius:3px; 
+    flex:1; min-width:60px; text-align:center;
+  }
+  .edit-toolbar .btn:hover { background:#e94560; }
+  .edit-toolbar .btn.save { background:#4caf50; border-color:#4caf50; }
+  .edit-toolbar .btn.save:hover { background:#45a049; }
+  .edit-toolbar .btn.warning { background:#ff5722; border-color:#ff5722; }
+  
+  /* 树形编辑器 */
+  .tree-editor { flex:1; overflow-y:auto; overflow-x:hidden; min-height:0; }
+  .tree-editor::-webkit-scrollbar { width:6px; }
+  .tree-editor::-webkit-scrollbar-track { background:#1a1a2e; }
+  .tree-editor::-webkit-scrollbar-thumb { background:#3f80c1; border-radius:3px; }
+  
+  .tree-node { margin-bottom:1px; }
+  .tree-row { 
+    display:flex; align-items:center; gap:4px; padding:3px 6px; 
+    cursor:pointer; font-size:11px; border-radius:2px; 
+    user-select:none; border:1px solid transparent; 
+    min-height:22px;
+  }
+  .tree-row:hover { background:rgba(233,69,96,0.15); border-color:rgba(233,69,96,0.3); }
+  .tree-row.selected { background:rgba(233,69,96,0.3); border-color:#e94560; }
+  .tree-row.dragging { opacity:0.3; }
+  .tree-row.drop-before { border-top:2px solid #e94560 !important; }
+  .tree-row.drop-after { border-bottom:2px solid #e94560 !important; }
+  
+  .tree-icon { width:14px; font-size:9px; text-align:center; flex-shrink:0; color:#aaa; }
+  .tree-label { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:11px; }
+  .tree-type { font-size:8px; color:#aaa; background:#0f3460; padding:0 3px; border-radius:2px; flex-shrink:0; }
+  .tree-value { font-size:10px; color:#4caf50; flex-shrink:0; background:#1a2940; padding:0 4px; border-radius:2px; max-width:100px; overflow:hidden; text-overflow:ellipsis; }
+  
+  .tree-children { margin-left:12px; border-left:1px solid #3f80c1; padding-left:6px; display:none; }
+  .tree-node.expanded > .tree-children { display:block; }
+  
+  .tree-node.tab > .tree-row .tree-label { color:#4caf50; font-weight:700; }
+  .tree-node.subpage > .tree-row .tree-label { color:#ff9800; font-weight:600; }
+  .tree-node.item > .tree-row { padding-left:16px; }
+  .tree-node.item > .tree-row .tree-label { color:#eee; font-size:10px; }
+  
+  /* 属性编辑 */
+  .prop-form { 
+    border-top:2px solid #3f80c1; padding-top:6px; margin-top:6px; 
+    max-height:200px; overflow-y:auto; flex-shrink:0; display:none;
+  }
+  .prop-form.visible { display:block; }
+  .prop-field { margin-bottom:5px; }
+  .prop-field label { display:block; font-size:10px; color:#aaa; margin-bottom:2px; }
+  .prop-field input, .prop-field select, .prop-field textarea { 
+    width:100%; padding:4px 6px; background:#16213e; border:1px solid #3f80c1; 
+    color:#eee; font-size:11px; border-radius:2px; outline:none; font-family:inherit;
+  }
+  .prop-field input:focus, .prop-field select:focus, .prop-field textarea:focus { border-color:#e94560; }
+  .prop-field textarea { min-height:40px; resize:vertical; font-family:'Microsoft YaHei',sans-serif; }
+  .prop-actions { display:flex; gap:4px; margin-top:6px; }
+  .prop-actions .btn { flex:1; padding:4px 0; font-size:10px; }
+  
+  /* 右侧原始BIOS页面区域 */
+  .preview-area { flex:1; position:relative; background:#000; display:flex; flex-direction:column; }
+  .preview-toolbar {
+    background:#16213e; border-bottom:2px solid #3f80c1; padding:4px 12px;
+    display:flex; align-items:center; justify-content:space-between; flex-shrink:0;
+  }
+  .preview-toolbar span { font-size:11px; color:#aaa; }
+  .preview-toolbar .btn { padding:3px 8px; font-size:10px; background:#0f3460; border:1px solid #3f80c1; color:#eee; cursor:pointer; border-radius:2px; }
+  #biosFrame { flex:1; width:100%; border:none; display:block; }
+  
+  /* 折叠按钮 */
+  .collapse-btn { cursor:pointer; font-size:12px; color:#aaa; padding:0 4px; }
+  .collapse-btn:hover { color:#e94560; }
+  
+  /* 状态提示 */
+  .status-bar { 
+    background:#16213e; border-top:1px solid #3f80c1; padding:3px 10px; 
+    font-size:10px; color:#aaa; flex-shrink:0;
+  }
+  .status-bar .ok { color:#4caf50; }
+  .status-bar .err { color:#ff5722; }
+</style>
+</head>
+<body>
+
+<div id="editor-root">
+  <!-- 左侧面板 -->
+  <div class="edit-panel" id="editPanel">
+    <div class="panel-header">
+      <span>BIOS 编辑器</span>
+      <span class="collapse-btn" onclick="togglePanel()" title="折叠/展开">◀</span>
+    </div>
+    <div class="panel-body">
+      <div class="edit-toolbar">
+        <button class="btn" onclick="addNode()">+ 添加</button>
+        <button class="btn" onclick="editSelected()">✏ 编辑</button>
+        <button class="btn warning" onclick="deleteSelected()">🗑 删除</button>
+        <button class="btn" onclick="toggleAll()">📂 展开</button>
+        <button class="btn save" onclick="saveToFile()">💾 保存JSON</button>
+        <button class="btn" onclick="importJSON()">📤 导入JSON</button>
+        <input type="file" id="jsonFile" style="display:none" accept=".json" onchange="handleImport(event)">
+      </div>
+      
+      <div class="tree-editor" id="treeContainer"></div>
+      
+      <div class="prop-form" id="propForm">
+        <div id="propFields"></div>
+        <div class="prop-actions">
+          <button class="btn" onclick="closeProp()">取消</button>
+          <button class="btn save" onclick="saveProp()">应用</button>
+        </div>
+      </div>
+    </div>
+    <div class="status-bar" id="statusBar">
+      <span id="statusText">就绪</span>
+    </div>
+  </div>
+  
+  <!-- 右侧原始BIOS页面 -->
+  <div class="preview-area" id="previewArea">
+    <div class="preview-toolbar">
+      <span>实时预览 · 原始BIOS仿真页面</span>
+      <button class="btn" onclick="refreshPreview()">🔄 刷新</button>
+    </div>
+    <iframe id="biosFrame" src="DZ500SQ_bios_frontend.html"></iframe>
+  </div>
+</div>
+
+<script>
+// ==================== 状态 ====================
+let editorData = { tabs: {}, subPages: {} };
+let selectedPath = null;
+let expandedPaths = new Set();
+let draggedPath = null;
+let propCallback = null;
+let isPanelCollapsed = false;
+
+// ==================== 初始化 ====================
+function init() {
+  const frame = document.getElementById('biosFrame');
+  
+  // 先尝试从localStorage恢复
+  const saved = localStorage.getItem('biosEditor_backup');
+  if (saved) {
+    try {
+      editorData = JSON.parse(saved);
+      renderTree();
+      setStatus('已从本地缓存恢复', 'ok');
+    } catch(e) {
+      setStatus('缓存解析失败，将从iframe同步', 'err');
+    }
+  }
+  
+  frame.onload = () => {
+    syncFromFrame();
+    renderTree();
+    setStatus('已从BIOS页面同步数据', 'ok');
+  };
+  
+  // 5秒后如果还没加载，提示错误
+  setTimeout(() => {
+    if (Object.keys(editorData.tabs).length === 0) {
+      setStatus('iframe加载超时，请检查文件路径', 'err');
+    }
+  }, 5000);
+}
+
+function setStatus(text, type) {
+  const el = document.getElementById('statusText');
+  el.textContent = text;
+  el.className = type || '';
+}
+
+// ==================== iframe数据同步 ====================
+function syncFromFrame() {
+  try {
+    const win = document.getElementById('biosFrame').contentWindow;
+    if (win && win.biosData && win.subPages) {
+      editorData = {
+        tabs: deepClone(win.biosData),
+        subPages: deepClone(win.subPages)
+      };
+      // 自动备份到localStorage
+      localStorage.setItem('biosEditor_backup', JSON.stringify(editorData));
+      return true;
+    }
+  } catch (e) {
+    console.error('syncFromFrame失败:', e);
+    setStatus('同步失败: ' + e.message, 'err');
+  }
+  return false;
+}
+
+function syncToFrame() {
+  try {
+    const win = document.getElementById('biosFrame').contentWindow;
+    if (win) {
+      win.biosData = deepClone(editorData.tabs);
+      win.subPages = deepClone(editorData.subPages);
+      
+      // 调用iframe内的刷新方法
+      if (typeof win.switchTab === 'function') {
+        win.switchTab(win.currentTab || 'home');
+      } else if (typeof win.renderPage === 'function') {
+        win.renderPage(win.currentRenderedPage || 'home');
+      }
+      
+      // 备份
+      localStorage.setItem('biosEditor_backup', JSON.stringify(editorData));
+      setStatus('已同步到预览 · 自动备份', 'ok');
+      return true;
+    }
+  } catch (e) {
+    console.error('syncToFrame失败:', e);
+    setStatus('同步到预览失败: ' + e.message, 'err');
+  }
+  return false;
+}
+
+function refreshPreview() {
+  syncFromFrame();
+  renderTree();
+  setStatus('已强制刷新', 'ok');
+}
+
+function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+// ==================== 树形渲染 ====================
+function renderTree() {
+  const container = document.getElementById('treeContainer');
+  container.innerHTML = '';
+  
+  // Tabs
+  Object.entries(editorData.tabs || {}).forEach(([key, tab]) => {
+    const node = createTreeNode('tab', key, tab.label || key, '', key);
+    const children = document.createElement('div');
+    children.className = 'tree-children';
+    (tab.items || []).forEach((item, idx) => {
+      children.appendChild(createItemNode(item, key + '.items.' + idx));
+    });
+    node.appendChild(children);
+    container.appendChild(node);
+    if (expandedPaths.has(key)) node.classList.add('expanded');
+  });
+  
+  // SubPages (独立显示，不带children)
+  Object.entries(editorData.subPages || {}).forEach(([key, page]) => {
+    const node = createTreeNode('subpage', key, page.title || key, '', key);
+    const children = document.createElement('div');
+    children.className = 'tree-children';
+    (page.items || []).forEach((item, idx) => {
+      children.appendChild(createItemNode(item, key + '.items.' + idx));
+    });
+    node.appendChild(children);
+    container.appendChild(node);
+    if (expandedPaths.has(key)) node.classList.add('expanded');
+  });
+}
+
+function createTreeNode(type, key, label, value, path) {
+  const node = document.createElement('div');
+  node.className = 'tree-node ' + type;
+  node.dataset.path = path;
+  
+  const row = document.createElement('div');
+  row.className = 'tree-row';
+  if (selectedPath === path) row.classList.add('selected');
+  
+  const isContainer = type === 'tab' || type === 'subpage';
+  const icon = isContainer ? (expandedPaths.has(path) ? '▼' : '▶') : '•';
+  
+  row.innerHTML = [
+    '<span class="tree-icon">', icon, '</span>',
+    '<span class="tree-label">', escapeHtml(label || key), '</span>',
+    '<span class="tree-type">', type, '</span>',
+    value ? '<span class="tree-value">' + escapeHtml(value) + '</span>' : ''
+  ].join('');
+  
+  row.onclick = function(e) {
+    e.stopPropagation();
+    selectNode(path);
+    if (isContainer) toggleExpand(path);
+  };
+  
+  // 仅叶子节点(item)可拖拽
+  node.appendChild(row);
+  return node;
+}
+
+function createItemNode(item, path) {
+  const node = document.createElement('div');
+  node.className = 'tree-node item';
+  node.dataset.path = path;
+  
+  const row = document.createElement('div');
+  row.className = 'tree-row';
+  if (selectedPath === path) row.classList.add('selected');
+  
+  const icons = { text: '📄', choice: '🔘', submenu: '▶', action: '⚡', input: '✏', spacer: '⬛' };
+  let displayValue = item.value || '';
+  if (item.type === 'submenu' && item.target) displayValue = '→' + item.target;
+  else if (item.type === 'choice' && item.options) displayValue = item.value || item.options[0] || '';
+  
+  row.innerHTML = [
+    '<span class="tree-icon">', icons[item.type] || '•', '</span>',
+    '<span class="tree-label">', escapeHtml(item.label || '(无标签)'), '</span>',
+    '<span class="tree-type">', item.type, '</span>',
+    displayValue ? '<span class="tree-value">' + escapeHtml(displayValue) + '</span>' : ''
+  ].join('');
+  
+  row.onclick = function(e) {
+    e.stopPropagation();
+    selectNode(path);
+  };
+  
+  row.draggable = true;
+  row.ondragstart = onDragStart;
+  row.ondragover = onDragOver;
+  row.ondrop = onDrop;
+  row.ondragend = onDragEnd;
+  row.dataset.dragPath = path;
+  
+  node.appendChild(row);
+  return node;
+}
+
+// ==================== 拖拽排序（修复版）====================
+function onDragStart(e) {
+  draggedPath = this.dataset.dragPath;
+  this.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  
+  // 清理旧的drop标记
+  document.querySelectorAll('.drop-before, .drop-after').forEach(function(el) {
+    el.classList.remove('drop-before', 'drop-after');
+  });
+  
+  if (this.dataset.dragPath === draggedPath) return;
+  
+  const rect = this.getBoundingClientRect();
+  const before = e.clientY < rect.top + rect.height / 2;
+  this.classList.add(before ? 'drop-before' : 'drop-after');
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  this.classList.remove('drop-before', 'drop-after');
+  
+  const targetPath = this.dataset.dragPath;
+  if (!draggedPath || draggedPath === targetPath) return;
+  
+  const rect = this.getBoundingClientRect();
+  const before = e.clientY < rect.top + rect.height / 2;
+  
+  moveNode(draggedPath, targetPath, before);
+}
+
+function onDragEnd(e) {
+  this.classList.remove('dragging');
+  document.querySelectorAll('.drop-before, .drop-after').forEach(function(el) {
+    el.classList.remove('drop-before', 'drop-after');
+  });
+  draggedPath = null;
+}
+
+function moveNode(fromPath, toPath, before) {
+  const fromParts = fromPath.split('.');
+  const toParts = toPath.split('.');
+  
+  // 必须同级移动
+  if (fromParts.length !== 3 || toParts.length !== 3) return;
+  if (fromParts[0] !== toParts[0] || fromParts[1] !== 'items' || toParts[1] !== 'items') return;
+  
+  const parentKey = fromParts[0];
+  const parent = editorData.tabs[parentKey] || editorData.subPages[parentKey];
+  if (!parent || !parent.items) return;
+  
+  const fromIdx = parseInt(fromParts[2]);
+  const toIdx = parseInt(toParts[2]);
+  
+  if (fromIdx === toIdx) return;
+  
+  const item = parent.items[fromIdx];
+  parent.items.splice(fromIdx, 1);
+  
+  let insertIdx;
+  if (before) {
+    insertIdx = toIdx > fromIdx ? toIdx - 1 : toIdx;
+  } else {
+    insertIdx = toIdx > fromIdx ? toIdx : toIdx + 1;
+  }
+  
+  parent.items.splice(insertIdx, 0, item);
+  
+  syncToFrame();
+  renderTree();
+  setStatus('已移动节点', 'ok');
+}
+
+// ==================== 选择和展开 ====================
+function selectNode(path) {
+  selectedPath = path;
+  document.querySelectorAll('.tree-row.selected').forEach(function(el) {
+    el.classList.remove('selected');
+  });
+  const row = document.querySelector('[data-path="' + path + '"] > .tree-row');
+  if (row) row.classList.add('selected');
+}
+
+function toggleExpand(path) {
+  const node = document.querySelector('[data-path="' + path + '"]');
+  if (!node) return;
+  
+  const isExpanded = expandedPaths.has(path);
+  if (isExpanded) {
+    expandedPaths.delete(path);
+    node.classList.remove('expanded');
+  } else {
+    expandedPaths.add(path);
+    node.classList.add('expanded');
+  }
+  
+  const icon = node.querySelector('.tree-icon');
+  if (icon) icon.textContent = isExpanded ? '▶' : '▼';
+}
+
+function toggleAll() {
+  const all = document.querySelectorAll('.tree-node');
+  const allExpanded = expandedPaths.size === all.length && all.length > 0;
+  
+  if (allExpanded) {
+    expandedPaths.clear();
+    all.forEach(function(n) {
+      n.classList.remove('expanded');
+      const icon = n.querySelector('.tree-icon');
+      if (icon && icon.textContent === '▼') icon.textContent = '▶';
+    });
+  } else {
+    all.forEach(function(n) {
+      const p = n.dataset.path;
+      if (p) expandedPaths.add(p);
+      n.classList.add('expanded');
+      const icon = n.querySelector('.tree-icon');
+      if (icon && icon.textContent === '▶') icon.textContent = '▼';
+    });
+  }
+}
+
+function togglePanel() {
+  const panel = document.getElementById('editPanel');
+  panel.classList.toggle('collapsed');
+  isPanelCollapsed = !isPanelCollapsed;
+}
+
+// ==================== CRUD操作（修复版）====================
+function addNode() {
+  if (!selectedPath) { alert('请先选择一个Tab或子页面作为父节点'); return; }
+  
+  const parts = selectedPath.split('.');
+  const isContainer = parts.length === 1;
+  if (!isContainer) { alert('只能向Tab或子页面添加子项'); return; }
+  
+  showPropForm('添加配置项', [
+    { name: 'type', label: '类型 *', type: 'select', options: ['text', 'choice', 'submenu', 'action', 'input', 'spacer'], value: 'text' },
+    { name: 'label', label: '标签 *', type: 'text' },
+    { name: 'value', label: '默认值', type: 'text' },
+    { name: 'help', label: '帮助文本', type: 'textarea' }
+  ], function(data) {
+    if (!data.type || !data.label) { alert('类型和标签必填'); return; }
+    
+    const parent = editorData.tabs[parts[0]] || editorData.subPages[parts[0]];
+    if (!parent) return;
+    if (!parent.items) parent.items = [];
+    
+    const newItem = { type: data.type, label: data.label };
+    if (data.value) newItem.value = data.value;
+    if (data.help) newItem.help = data.help;
+    
+    if (data.type === 'choice') {
+      newItem.options = ['选项1', '选项2'];
+    } else if (data.type === 'submenu') {
+      newItem.target = 'sub_' + Date.now();
+      editorData.subPages[newItem.target] = {
+        title: data.label,
+        help: data.help || '',
+        items: []
+      };
+    }
+    
+    parent.items.push(newItem);
+    syncToFrame();
+    renderTree();
+    setStatus('已添加: ' + data.label, 'ok');
+  });
+}
+
+function editSelected() {
+  if (!selectedPath) { alert('请先选择一个节点'); return; }
+  
+  const parts = selectedPath.split('.');
+  const node = resolvePath(selectedPath);
+  if (!node) { alert('节点不存在'); return; }
+  
+  if (parts.length === 1) {
+    // 编辑Tab/子页面本身
+    showPropForm('编辑 ' + (node.label || node.title || parts[0]), [
+      { name: 'label', label: '名称', type: 'text', value: node.label || node.title || '' },
+      { name: 'help', label: '帮助文本', type: 'textarea', value: node.help || '' }
+    ], function(data) {
+      if (data.label) {
+        if (node.label !== undefined) node.label = data.label;
+        if (node.title !== undefined) node.title = data.label;
+      }
+      if (data.help !== undefined) {
+        if (data.help) node.help = data.help;
+        else delete node.help;
+      }
+      syncToFrame();
+      renderTree();
+      setStatus('已修改', 'ok');
+    });
+  } else {
+    // 编辑配置项
+    const fields = [
+      { name: 'type', label: '类型', type: 'select', options: ['text', 'choice', 'submenu', 'action', 'input', 'spacer'], value: node.type },
+      { name: 'label', label: '标签', type: 'text', value: node.label || '' },
+      { name: 'value', label: '值', type: 'text', value: node.value || '' },
+      { name: 'help', label: '帮助文本', type: 'textarea', value: node.help || '' }
+    ];
+    
+    if (node.type === 'choice') {
+      fields.push({ name: 'options', label: '选项(逗号分隔)', type: 'text', value: (node.options || []).join(',') });
+    }
+    if (node.type === 'submenu') {
+      fields.push({ name: 'target', label: '目标子页面', type: 'text', value: node.target || '' });
+    }
+    
+    showPropForm('编辑配置项', fields, function(data) {
+      // 类型变更时清理旧属性
+      const oldType = node.type;
+      node.type = data.type;
+      node.label = data.label;
+      
+      if (data.value) node.value = data.value;
+      else delete node.value;
+      
+      if (data.help) node.help = data.help;
+      else delete node.help;
+      
+      // 清理旧类型特有属性
+      if (data.type !== 'choice') delete node.options;
+      else if (data.options) {
+        const opts = data.options.split(',').map(function(s) { return s.trim(); }).filter(function(s) { return s; });
+        if (opts.length > 0) node.options = opts;
+        else delete node.options;
+      }
+      
+      if (data.type !== 'submenu') delete node.target;
+      else if (data.target) node.target = data.target;
+      else delete node.target;
+      
+      syncToFrame();
+      renderTree();
+      setStatus('已修改: ' + data.label, 'ok');
+    });
+  }
+}
+
+function deleteSelected() {
+  if (!selectedPath) { alert('请先选择一个节点'); return; }
+  
+  const node = resolvePath(selectedPath);
+  const label = (node && (node.label || node.title)) || selectedPath;
+  if (!confirm('确定删除 "' + label + '"？')) return;
+  
+  const parts = selectedPath.split('.');
+  
+  if (parts.length === 1) {
+    // 删除Tab或子页面
+    if (editorData.tabs[parts[0]]) {
+      // 先删除关联的子页面
+      const tab = editorData.tabs[parts[0]];
+      if (tab.items) {
+        tab.items.forEach(function(item) {
+          if (item.type === 'submenu' && item.target && editorData.subPages[item.target]) {
+            delete editorData.subPages[item.target];
+          }
+        });
+      }
+      delete editorData.tabs[parts[0]];
+    }
+    if (editorData.subPages[parts[0]]) {
+      delete editorData.subPages[parts[0]];
+    }
+  } else if (parts[1] === 'items') {
+    // 删除配置项
+    const parent = editorData.tabs[parts[0]] || editorData.subPages[parts[0]];
+    if (parent && parent.items) {
+      const idx = parseInt(parts[2]);
+      const item = parent.items[idx];
+      // 如果删除的是submenu，同时删除关联的子页面
+      if (item && item.type === 'submenu' && item.target) {
+        delete editorData.subPages[item.target];
+      }
+      parent.items.splice(idx, 1);
+    }
+  }
+  
+  selectedPath = null;
+  syncToFrame();
+  renderTree();
+  setStatus('已删除', 'ok');
+}
+
+function resolvePath(path) {
+  const parts = path.split('.');
+  let current = editorData;
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i];
+    if (p === 'items') {
+      current = current.items;
+    } else if (Array.isArray(current)) {
+      current = current[parseInt(p)];
+    } else {
+      current = current[p];
+    }
+    if (current === undefined || current === null) return null;
+  }
+  return current;
+}
+
+// ==================== 属性表单（修复版）====================
+function showPropForm(title, fields, callback) {
+  const form = document.getElementById('propForm');
+  const container = document.getElementById('propFields');
+  container.innerHTML = '';
+  
+  // 标题
+  const titleDiv = document.createElement('div');
+  titleDiv.style.cssText = 'font-size:12px;color:#e94560;margin-bottom:8px;font-weight:bold;';
+  titleDiv.textContent = title;
+  container.appendChild(titleDiv);
+  
+  fields.forEach(function(f) {
+    const div = document.createElement('div');
+    div.className = 'prop-field';
+    
+    let inputHtml = '';
+    if (f.type === 'select') {
+      var optionsHtml = f.options.map(function(o) {
+        return '<option value="' + escapeHtml(o) + '"' + (o === f.value ? ' selected' : '') + '>' + escapeHtml(o) + '</option>';
+      }).join('');
+      inputHtml = '<select id="pf_' + f.name + '">' + optionsHtml + '</select>';
+    } else if (f.type === 'textarea') {
+      inputHtml = '<textarea id="pf_' + f.name + '">' + escapeHtml(f.value || '') + '</textarea>';
+    } else {
+      inputHtml = '<input type="text" id="pf_' + f.name + '" value="' + escapeHtml(f.value || '') + '">';
+    }
+    
+    div.innerHTML = '<label>' + escapeHtml(f.label) + '</label>' + inputHtml;
+    container.appendChild(div);
+  });
+  
+  propCallback = callback;
+  form.classList.add('visible');
+}
+
+function closeProp() {
+  document.getElementById('propForm').classList.remove('visible');
+  propCallback = null;
+}
+
+function saveProp() {
+  if (!propCallback) return;
+  
+  var data = {};
+  document.querySelectorAll('#propFields input, #propFields select, #propFields textarea').forEach(function(el) {
+    data[el.id.replace('pf_', '')] = el.value;
+  });
+  
+  propCallback(data);
+  closeProp();
+}
+
+// ==================== 导入导出与保存（修复版）====================
+function saveToFile() {
+  var json = JSON.stringify(editorData, null, 2);
+  var blob = new Blob([json], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'bios-data-' + new Date().toISOString().slice(0,19).replace(/:/g,'-') + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  setStatus('JSON已导出', 'ok');
+}
+
+function exportJSON() { saveToFile(); }
+
+function importJSON() { document.getElementById('jsonFile').click(); }
+
+function handleImport(event) {
+  var file = event.target.files[0];
+  if (!file) return;
+  
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      if (data.tabs && data.subPages) {
+        editorData = data;
+        syncToFrame();
+        renderTree();
+        setStatus('导入成功', 'ok');
+      } else {
+        alert('无效格式：必须包含 tabs 和 subPages');
+      }
+    } catch(err) {
+      alert('JSON解析错误：' + err.message);
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+// ==================== 辅助函数 ====================
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+// ==================== 启动 ====================
+init();
+</script>
+</body>
+</html>

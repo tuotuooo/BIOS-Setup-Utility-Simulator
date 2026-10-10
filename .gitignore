@@ -1,0 +1,34 @@
+# 视频和大文件
+sp/
+*.mp4
+*.zip
+
+# Python 分析脚本
+*.py
+
+# 临时文件
+*.bak
+nul
+*.txt
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 截图帧
+spframes_*
+
+# ASUS 子项目（独立仓库）
+ASUS/
+PROJECT_ONE/
+
+# 工具脚本
+*.js
+*.ps1
+
+# 备份HTML（只保留主文件）
+*副本*
+*Copy*
+
+# DuMate 工作目录
+.dumate/
