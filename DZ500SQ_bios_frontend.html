@@ -171,15 +171,19 @@
     color: var(--submenu-text);  /* 默认蓝色 */
   }
   .info-row.is-submenu .info-label .submenu-arrow {
-    color: var(--submenu-text);  /* ▶箭头默认蓝色，和文字一起 */
+    color: var(--label-text);  /* ▶箭头默认灰色（只读） */
+  }
+  /* showArrow项：▶箭头蓝色，和文字一起交互 */
+  .info-row.arrow-interactive .info-label .submenu-arrow {
+    color: var(--submenu-text);  /* ▶箭头蓝色 */
   }
   /* 选中态：提升 specificity 覆盖默认蓝色 */
   .info-row.focused.is-submenu .info-label,
   .info-row.focused .info-label {
     color: #ffffff;  /* 选中时标签文字变白 */
   }
-  /* 选中时箭头也变白，和文字一起交互 */
-  .info-row.focused.is-submenu .info-label .submenu-arrow {
+  /* 选中时箭头变白（仅arrow-interactive项） */
+  .info-row.focused.arrow-interactive .info-label .submenu-arrow {
     color: #ffffff;
   }
   .info-label {
@@ -1851,7 +1855,7 @@ function renderPage(pageName) {
     if (item.type === 'choice' && !isDisabled) {
       row.classList.add('is-choice');
       if (item.showArrow) {
-        row.classList.add('is-submenu');
+        row.classList.add('is-submenu', 'arrow-interactive');
         label.innerHTML = '\u00a0<div class="submenu-arrow">▶</div>' + item.label;
         label.style.display = 'flex';
       }
