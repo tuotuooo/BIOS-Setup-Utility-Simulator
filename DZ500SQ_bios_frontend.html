@@ -651,18 +651,21 @@ const biosData = {
     label: '启动',
     help: '系统启动配置。',
     items: [
-      { type:'input', label:'用户等待时间', value:'[2]', help:'设置启动等待时间（秒）。' },
+      { type:'input', label:'用户等待时间', value:'[2]', disabledWhen:{fast_boot:'<打开>'}, help:'设置启动等待时间（秒）。' },
       { type:'choice', label:'数字锁定键开机状态', value:'<打开>', options:['<关闭>','<打开>'], help:'设置开机时数字锁定键状态。' },
       { type:'choice', label:'OPTION ROM信息', value:'<打开>', options:['<关闭>','<打开>'], help:'启用或禁用OPTION ROM信息显示。' },
-      { type:'choice', label:'禁用Windows系统', value:'<关闭>', options:['<关闭>','<打开>'], help:'启用或禁用Windows系统检测。' },
-      { type:'choice', label:'兼容支持模块', value:'<关闭>', options:['<关闭>','<打开>'], help:'兼容性支持模块。允许加载传统的操作系统。' },
-      { type:'choice', label:'启动模式', value:'<UEFI>', options:['<Legacy>','<UEFI>'], help:'选择启动模式。' },
-      { type:'choice', label:'内置SHELL', value:'<打开>', options:['<关闭>','<打开>'], help:'启用或禁用内置SHELL。' },
-      { type:'choice', label:'快速启动', value:'<关闭>', options:['<关闭>','<打开>'], help:'启用或禁用快速启动。' },
-      { type:'choice', label:'网络引导', value:'<打开>', options:['<关闭>','<打开>'], help:'启用或禁用网络引导。' },
-      { type:'input', label:'网络启动重试', value:'[8]', help:'设置网络启动重试次数。' },
-      { type:'choice', label:'网络引导IP版本', value:'<IPv4>', options:['<IPv4>','<IPv6>'], help:'选择网络引导IP版本。' },
-      { type:'submenu', label:'PCI ROM优先级', target:'pci_rom', help:'如果有多个Option ROMs (Legacy and EFI Compatible),请指定要启动的PCI Option ROM。' },
+      { type:'choice', label:'禁用Windows系统', value:'<关闭>', options:['<关闭>','<打开>'], key:'disable_windows', help:'启用或禁用Windows系统检测。' },
+      { type:'choice', label:'兼容支持模块', value:'<关闭>', options:['<关闭>','<打开>'], key:'csm', disabledWhen:{disable_windows:'<打开>', fast_boot:'<打开>'}, help:'兼容性支持模块。允许加载传统的操作系统。' },
+      { type:'choice', label:'启动模式', value:'<UEFI>', options:['<Legacy>','<UEFI>'], disabledWhen:{csm:'<关闭>', fast_boot:'<打开>'}, help:'选择启动模式。' },
+      { type:'choice', label:'内置SHELL', value:'<打开>', options:['<关闭>','<打开>'], disabledWhen:{fast_boot:'<打开>'}, help:'启用或禁用内置SHELL。' },
+      { type:'choice', label:'快速启动', value:'<关闭>', options:['<关闭>','<打开>'], key:'fast_boot', help:'启用或禁用快速启动。' },
+      { type:'choice', label:'网络引导', value:'<打开>', options:['<关闭>','<打开>'], visibleWhen:{fast_boot:'<关闭>'}, help:'启用或禁用网络引导。' },
+      { type:'choice', label:'UEFI网络协议栈', value:'<关闭>', options:['<关闭>','<打开>'], visibleWhen:{fast_boot:'<打开>'}, help:'启用或禁用UEFI网络协议栈。' },
+      { type:'input', label:'网络启动重试', value:'[8]', visibleWhen:{fast_boot:'<关闭>'}, help:'设置网络启动重试次数。' },
+      { type:'choice', label:'网络引导IP版本', value:'<IPv4>', options:['<IPv4>','<IPv6>'], visibleWhen:{csm:'<关闭>', fast_boot:'<关闭>'}, help:'选择网络引导IP版本。' },
+      { type:'spacer' },
+      { type:'submenu', label:'PCI ROM优先级', target:'pci_rom', visibleWhen:{csm:'<打开>'}, help:'如果有多个Option ROMs (Legacy and EFI Compatible),请指定要启动的PCI Option ROM。' },
+      { type:'spacer' },
       { type:'submenu', label:'启动管理器', target:'boot_manager', help:'管理启动设备。' },
       { type:'submenu', label:'启动策略管理器', target:'boot_policy', help:'配置启动策略。' }
     ]
@@ -991,10 +994,19 @@ const subPages = {
     ]
   },
   boot_manager: {
-    title: 'UEFI 硬盘驱动器',
-    help: '上下光标键选择设备，<+>和<->移动设备至较高或较低值。',
+    title: '启动管理器',
+    help: '',
     items: [
-      { type:'text', label:'Kylin Linux(UEFI_NVME (PCI1-0-0): FUKSIZE XP1000PZ56G)', value:'' }
+      { type:'spacer' },
+      { type:'text', label:'启动管理器菜单', value:'' },
+      { type:'spacer' },
+      { type:'submenu', label:'Kylin Linux(UEFI NVME(PCI1-0-0):SCY C3000)', value:'', target:'', help:'' },
+      { type:'submenu', label:'UEFI SATA 1-2:ASUS SDRW-08U1MT', value:'', target:'', help:'' },
+      { type:'submenu', label:'UEFI J23:Realtek PCIe GBE Family Controller PXE IPv4', value:'', target:'', help:'' },
+      { type:'submenu', label:'UEFI J23:Realtek PCIe GBE Family Controller HTTP IPv4', value:'', target:'', help:'' },
+      { type:'submenu', label:'Internal EDK Shell', value:'', target:'', help:'' },
+      { type:'spacer' },
+      { type:'text', label:'使用<↑>和<↓>键选择启动选项，使用<Enter>键选中启动选项，使用<Esc>退出启动管理器菜单', value:'' }
     ]
   },
   boot_policy: {
@@ -1022,7 +1034,10 @@ const subPages = {
     title: 'PCI ROM优先级',
     help: '如果有多个Option ROMs (Legacy and EFI Compatible),请指定要启动的PCI Option ROM。',
     items: [
-      { type:'text', label:'说明', value:'如果有多个Option ROMs (Legacy and EFI Compatible),请指定要启动的PCI Option ROM。' }
+      { type:'choice', label:'视频OPTION ROM', value:'<UEFI优先>', options:['<UEFI优先>','<Legacy优先>'], help:'指定视频Option ROM的优先级。' },
+      { type:'choice', label:'网络OPTION ROM', value:'<UEFI优先>', options:['<UEFI优先>','<Legacy优先>','<自动>','<不加载>'], help:'指定网络Option ROM的优先级。' },
+      { type:'choice', label:'存储OPTION ROM', value:'<UEFI优先>', options:['<UEFI优先>','<Legacy优先>','<自动>','<不加载>'], help:'指定存储Option ROM的优先级。' },
+      { type:'choice', label:'其他OPTION ROM', value:'<UEFI优先>', options:['<UEFI优先>','<Legacy优先>','<不加载>'], help:'指定其他Option ROM的优先级。' }
     ]
   },
   forbid_type: {
@@ -1575,6 +1590,30 @@ function cycleChoiceValue(delta) {
   const newVal = opts[newIdx];
   item.value = newVal;
 
+  if (item.key === 'disable_windows' && newVal === '<打开>') {
+    const data = getRenderedData();
+    const csmItem = data.items.find(i => i.label === '兼容支持模块');
+    if (csmItem) csmItem.value = '<关闭>';
+  }
+  if (item.key === 'csm' && newVal === '<关闭>') {
+    const data = getRenderedData();
+    const bootItem = data.items.find(i => i.label === '启动模式');
+    if (bootItem) bootItem.value = '<UEFI>';
+  }
+  if (item.key === 'fast_boot' && newVal === '<打开>') {
+    const data = getRenderedData();
+    const waitItem = data.items.find(i => i.label === '用户等待时间');
+    if (waitItem) waitItem.value = '[1]';
+    const csmItem2 = data.items.find(i => i.label === '兼容支持模块');
+    if (csmItem2) csmItem2.value = '<关闭>';
+    const bootItem2 = data.items.find(i => i.label === '启动模式');
+    if (bootItem2) bootItem2.value = '<UEFI>';
+    const shellItem = data.items.find(i => i.label === '内置SHELL');
+    if (shellItem) shellItem.value = '<关闭>';
+    const netItem = data.items.find(i => i.label === '网络引导');
+    if (netItem) netItem.value = '<关闭>';
+  }
+
   // 更新DOM
   const rows = document.querySelectorAll('#infoBody .info-row');
   const row = rows[focusedRowIdx];
@@ -1786,6 +1825,26 @@ function renderPage(pageName) {
             item.value = newVal;
             val.textContent = newVal;
             val.dataset.current = newVal;
+            if (item.key === 'disable_windows' && newVal === '<打开>') {
+              const csmItem = data.items.find(i => i.label === '兼容支持模块');
+              if (csmItem) csmItem.value = '<关闭>';
+            }
+            if (item.key === 'csm' && newVal === '<关闭>') {
+              const bootItem = data.items.find(i => i.label === '启动模式');
+              if (bootItem) bootItem.value = '<UEFI>';
+            }
+            if (item.key === 'fast_boot' && newVal === '<打开>') {
+              const waitItem = data.items.find(i => i.label === '用户等待时间');
+              if (waitItem) waitItem.value = '[1]';
+              const csmItem2 = data.items.find(i => i.label === '兼容支持模块');
+              if (csmItem2) csmItem2.value = '<关闭>';
+              const bootItem2 = data.items.find(i => i.label === '启动模式');
+              if (bootItem2) bootItem2.value = '<UEFI>';
+              const shellItem = data.items.find(i => i.label === '内置SHELL');
+              if (shellItem) shellItem.value = '<关闭>';
+              const netItem = data.items.find(i => i.label === '网络引导');
+              if (netItem) netItem.value = '<关闭>';
+            }
             if (item.key && currentRenderedPage) {
               renderPage(currentRenderedPage);
             }
@@ -1870,7 +1929,11 @@ function renderPage(pageName) {
       } else if (item.type === 'submenu') {
         // 子菜单：▶箭头在label文字左侧（实机风格）
         row.classList.add('is-submenu');
-         label.innerHTML = '<div class="submenu-arrow">▶</div>' + item.label;
+         if (item.value !== '') {
+           label.innerHTML = '<div class="submenu-arrow">▶</div>' + item.label;
+         } else {
+           label.textContent = item.label;
+         }
          label.style.display = 'flex';
         val.className = 'info-value';  /* 值列清空，不显示▶ */
         val.textContent = '';  /* 不显示任何值 */
@@ -1924,7 +1987,7 @@ function openInlinePicker(targetElement, options, current, callback) {
       const div = document.createElement('div');
       div.className = 'inline-option' + (i === selectedIdx ? ' selected' : '');
       const span = document.createElement('span');
-      span.textContent = opt;
+      span.textContent = opt.replace(/<|>/g, '');
       div.appendChild(span);
       // 鼠标悬停高亮（不重建DOM，仅修改class，避免事件丢失）
       div.addEventListener('mouseenter', () => {
